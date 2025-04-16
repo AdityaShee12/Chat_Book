@@ -141,7 +141,7 @@ const menuHeight = 350; // Approximate height of context menu
       setTimeout(async () => {
         try {
           const response = await axios.get(
-            `${API}/api/v1/users/profile?userId=${userId}`
+            `https://real-time-chat-application-klxp.onrender.com/api/v1/users/profile?userId=${userId}`
           );
           console.log("Res",response);
           
