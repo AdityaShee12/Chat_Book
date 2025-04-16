@@ -71,7 +71,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  const avatarLocalPath = req.files?.avatar[0]?.path;
+  const avatarLocalPath = req.files?.avatar?.[0]?.path;
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   console.log(avatar);
 
@@ -81,7 +81,7 @@ const registerUser = asyncHandler(async (req, res) => {
     googleId,
     fullName,
     email,
-    avatar: avatar?.url || "",
+    avatar: avatar?.url?.replace("http://", "https://") || "",
     about,
     password,
     username: username.toLowerCase(),
