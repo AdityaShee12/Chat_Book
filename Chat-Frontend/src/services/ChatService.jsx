@@ -690,7 +690,6 @@ const ChatPage = () => {
 
 export default ChatPage;
 
-// import React, { useState, useEffect, useRef } from "react";
 // import { useLocation } from "react-router-dom";
 // import CryptoJS from "crypto-js";
 // import socket from "../socket.js";
