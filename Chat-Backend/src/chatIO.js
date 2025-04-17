@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new socketio(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://real-time-chat-application-eta.vercel.app",
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -20,7 +20,6 @@ const io = new socketio(server, {
 let users = {};
 
 io.on("connection", (socket) => {
-
   socket.on("new-user-joined", async (userId) => {
     console.log("JO");
     socket.join(userId);
@@ -408,6 +407,5 @@ io.on("connection", (socket) => {
       });
     }
   });
-  
 });
 export { server };
