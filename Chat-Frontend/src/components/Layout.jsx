@@ -181,7 +181,7 @@ const menuHeight = 350; // Approximate height of context menu
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        `${API}/profileAboutChange`,
+        `${API}/api/v1/users/profileAboutChange`,
         {
           userId,
           about: editedText,
@@ -199,7 +199,7 @@ const menuHeight = 350; // Approximate height of context menu
 
   const handleLogout = async () => {
     const response = await axios.post(
-      `${API}/logout`,
+      `${API}/api/v1/users/logout`,
       {},
       {
         withCredentials: true,
