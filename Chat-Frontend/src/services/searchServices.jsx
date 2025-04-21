@@ -5,7 +5,7 @@ import { debounce } from "lodash";
 import axios from "axios";
 import socket from "../socket.js";
 import { AiOutlineSearch } from "react-icons/ai";
-import { v4 as uuidv4 } from "uuid";
+import { API } from "../Backend_API.js";
 
 const Search = ({ userId, userName }) => {
   const navigate = useNavigate();
