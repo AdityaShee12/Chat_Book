@@ -13,6 +13,7 @@ import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
 import Zoom from "react-medium-image-zoom";
+import { API } from "../Backend_API.js";
 
 const Layout = () => {
   const location = useLocation();
@@ -140,7 +141,7 @@ const Layout = () => {
       setTimeout(async () => {
         try {
           const response = await axios.get(
-            `/api/v1/users/profile?userId=${userId}`
+            `${API}/api/v1/users/profile?userId=${userId}`
           );
           console.log("Res", response);
 
@@ -164,7 +165,7 @@ const Layout = () => {
 
     try {
       const response = await axios.post(
-        "/api/v1/users/profilePicChange",
+        `${API}/api/v1/users/profilePicChange`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -180,7 +181,7 @@ const Layout = () => {
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        "/api/v1/users/profileAboutChange",
+        `${API}/api/v1/users/profileAboutChange`,
         {
           userId,
           about: editedText,
@@ -198,7 +199,7 @@ const Layout = () => {
 
   const handleLogout = async () => {
     const response = await axios.post(
-      "/api/v1/users/logout",
+      `${API}/api/v1/users/logout`,
       {},
       {
         withCredentials: true,
@@ -206,10 +207,6 @@ const Layout = () => {
     );
     navigate("/sign_in");
     return response.data;
-  };
-
-  const AiAssistant = async () => {
-    navigate("/layout/AiAssistant");
   };
 
   return (

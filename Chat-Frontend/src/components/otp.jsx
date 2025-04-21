@@ -13,7 +13,7 @@ const Otp = () => {
 
   const sendOtp = async () => {
     try {
-      const response = await axios.post(`${API}/otp`, { email });
+      const response = await axios.post(`${API}/api/v1/users/otp`, { email });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);
