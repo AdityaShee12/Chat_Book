@@ -24,7 +24,7 @@ const Sign_up = () => {
   const navigate = useNavigate();
 
   const login = () => {
-    window.open("http://localhost:8000/auth/google", "_self");
+    window.open("https://real-time-chat-application-klxp.onrender.com/auth/google", "_self");
   };
 
   const sendOtp = async () => {
@@ -41,6 +41,7 @@ const Sign_up = () => {
       console.error("Try again", error);
     }
   };
+
   const verify = () => {
     console.log(otp, verifyOtp);
 
@@ -52,9 +53,11 @@ const Sign_up = () => {
       console.log("You gave the wrong OTP");
     }
   };
+
   const signIn = () => {
     navigate("/sign_in");
   };
+
   const handleRegister = async (e) => {
     e.preventDefault();
 
@@ -92,9 +95,11 @@ const Sign_up = () => {
       }
     }
   };
+
   const step2 = () => {
     setStep1(false);
   };
+
   return (
     <div className="h-screen p-4 flex flex-col items-center justify-center space-y-4">
       {/* Main Signup/Login Box */}

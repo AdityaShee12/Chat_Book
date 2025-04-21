@@ -9,10 +9,11 @@ import {
 import { FaCamera, FaPen } from "react-icons/fa";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import Search from "../services/searchServices.jsx"; // Import Search component
-import { FiLogIn } from "react-icons/fi";
+import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
-import { API } from "../Backend_API.js";
+import Zoom from "react-medium-image-zoom";
+import AiAssistant from "../services/AiAssistant.jsx";
 
 const Layout = () => {
   const location = useLocation();
@@ -77,11 +78,10 @@ const Layout = () => {
   const openContextMenu = (event) => {
     event.preventDefault();
     const rect = event.target.getBoundingClientRect();
-    
 
     let positionX = rect.left + 50;
     let positionY = rect.top + window.scrollY;
-const menuHeight = 350; // Approximate height of context menu
+    const menuHeight = 350; // Approximate height of context menu
     const menuWidth = 260; // Approximate width of context menu
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
@@ -141,10 +141,10 @@ const menuHeight = 350; // Approximate height of context menu
       setTimeout(async () => {
         try {
           const response = await axios.get(
-            `https://real-time-chat-application-klxp.onrender.com/api/v1/users/profile?userId=${userId}`
+            `/api/v1/users/profile?userId=${userId}`
           );
-          console.log("Res",response);
-          
+          console.log("Res", response);
+
           setFullName(response.data.data.fullName);
           setDp(response.data.data.avatar);
           setAbout(response.data.data.about);
@@ -165,7 +165,7 @@ const menuHeight = 350; // Approximate height of context menu
 
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profilePicChange`,
+        "/api/v1/users/profilePicChange",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -181,7 +181,7 @@ const menuHeight = 350; // Approximate height of context menu
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profileAboutChange`,
+        "/api/v1/users/profileAboutChange",
         {
           userId,
           about: editedText,
@@ -199,7 +199,7 @@ const menuHeight = 350; // Approximate height of context menu
 
   const handleLogout = async () => {
     const response = await axios.post(
-      `${API}/api/v1/users/logout`,
+      "/api/v1/users/logout",
       {},
       {
         withCredentials: true,
@@ -209,15 +209,19 @@ const menuHeight = 350; // Approximate height of context menu
     return response.data;
   };
 
+  const AiAssistant = async () => {
+    navigate("/layout/AiAssistant");
+  };
+
   return (
-    <div className="flex flex-col h-screen w-screen">
+    <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="bg-gray-200 px-4 py-3 flex items-center flex-none">
+      <div className="bg-gray-200 px-4 py-3 flex items-center flex-none h-16">
         <h2 className="text-lg font-semibold">Chat-Book</h2>
       </div>
 
       {/* Main Content (Sidebar + Search Section) */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {/* Left Fixed Sidebar */}
         <div className="w-16 flex flex-col justify-between items-center py-6 flex-none">
           {/* Upper Icons (3 icons) */}
@@ -227,11 +231,10 @@ const menuHeight = 350; // Approximate height of context menu
               className="p-2 rounded-full hover:bg-gray-200 transition">
               <AiOutlineMessage size={24} />
             </button>
-
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => AiAssistant()}
               className="p-2 rounded-full hover:bg-gray-200 transition rotate-90">
-              <AiOutlinePhone size={24} />
+              <SiOpenai size={24} />
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -242,13 +245,6 @@ const menuHeight = 350; // Approximate height of context menu
 
           {/* Bottom Icons (2 icons) */}
           <div className="space-y-6 flex flex-col justify-between items-center mt-10">
-            {/* <button
-              className="p-2 rounded-full hover:bg-gray-200 transition">
-              <AiOutlineSetting
-                size={24}
-                onContextMenu={(e) => openContextMenu(e)}
-              />
-            </button> */}
             <button
               className="p-2 rounded-full hover:bg-gray-200 transition"
               onClick={(e) => {
@@ -256,6 +252,7 @@ const menuHeight = 350; // Approximate height of context menu
               }}>
               <AiOutlineUser size={24} />
             </button>
+
             {contextMenu.show && (
               <div
                 ref={contextRef}
@@ -266,29 +263,30 @@ const menuHeight = 350; // Approximate height of context menu
                   background: "linear-gradient(135deg, #f0f4ff, #dceeff)",
                 }}
                 onClick={(e) => e.stopPropagation()}>
+                {/* Profile section */}
                 <div className="flex flex-col items-start relative w-full">
-                  {/* Profile Image Container */}
-                  <div className=" relative">
-                    <div>
-                      <img
-                        src={dp}
-                        alt="Profile"
-                        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                        onClick={() => setShowFullImage(true)}
-                      />
-                      <label className="absolute bottom-1 right-1 bg-blue-100 p-1 rounded-full shadow cursor-pointer">
+                  <div className="relative">
+                    <div className="relative w-24 h-24">
+                      <Zoom>
+                        <img
+                          src={dp}
+                          alt="Profile"
+                          className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                          onClick={() => setShowFullImage(true)}
+                        />
+                      </Zoom>
+                      <label className="absolute -bottom-1 -right-1 bg-white border border-gray-300 p-1 rounded-full shadow cursor-pointer">
+                        <FaCamera className="text-blue-600 text-xs" />
                         <input
                           type="file"
                           className="hidden"
                           onChange={handleProfilePicChange}
                         />
-                        <FaCamera className="text-blue-600 text-lg" />
                       </label>
                     </div>
                     <p className="mt-3 font-medium text-sm">{fullName}</p>
                   </div>
 
-                  {/* About Section */}
                   <div className="w-full mt-3 relative">
                     {isEditing ? (
                       <>
@@ -322,11 +320,10 @@ const menuHeight = 350; // Approximate height of context menu
                       </div>
                     )}
                   </div>
-                  {/* Email */}
+
                   <p className="text-sm text-gray-600 mt-2">{email}</p>
                 </div>
 
-                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
                   className="mt-4 w-full text-center bg-red-100 hover:bg-red-200 text-red-600 py-1 rounded-md transition">
@@ -334,14 +331,15 @@ const menuHeight = 350; // Approximate height of context menu
                 </button>
               </div>
             )}
+
             {showFullImage && (
               <div
-                onClick={() => setShowFullImage(false)}
-                className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+                className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999]"
+                onClick={() => setShowFullImage(false)}>
                 <img
                   src={dp}
                   alt="Full Profile"
-                  className="w-80 h-80 rounded-full object-cover border-4 border-white"
+                  className="max-w-full max-h-full object-contain rounded-none"
                 />
               </div>
             )}
@@ -356,16 +354,16 @@ const menuHeight = 350; // Approximate height of context menu
             minWidth: "20%",
             maxWidth: "50%",
           }}>
-          {/* Search Component */}
           <Search userId={userId} userName={name} />
         </div>
+
         {/* Draggable Resizer */}
         <div
           className="w-1 bg-slate-400 cursor-ew-resize flex-none"
           onMouseDown={handleMouseDown}></div>
 
         {/* Right Content (ChatPage via Outlet) */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-y-auto">
           <Outlet />
         </div>
       </div>

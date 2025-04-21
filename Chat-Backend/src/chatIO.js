@@ -6,22 +6,38 @@ import { fileURLToPath } from "url";
 import { User } from "./models/user.models.js";
 import { Message } from "./models/Message.models.js";
 import { Notification } from "./models/notification.models.js";
+import { markAsUntransferable } from "worker_threads";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new socketio(server, {
   cors: {
-    origin: "https://real-time-chat-application-eta.vercel.app",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
+// Redis Connection with Error Handling
+// const redisClient = createClient({
+//   url: "redis://127.0.0.1:6379",
+// });
+
+// redisClient.on("error", (err) => console.log("Redis Error:", err));
+
+// try {
+//   await redisClient.connect();
+//   console.log("Redis Connected Successfully");
+// } catch (error) {
+//   console.error("Redis Connection Failed:", error);
+// }
+
 let users = {};
 
 io.on("connection", (socket) => {
+  
   socket.on("new-user-joined", async (userId) => {
-    console.log("JO");
     socket.join(userId);
     if (users[userId]) {
       // Existing object ke preserve kore socketId update kora holo
@@ -55,10 +71,15 @@ io.on("connection", (socket) => {
 
   socket.on("reciever add", async ({ OwnId, ToId }) => {
     try {
-      console.log("ON");
+      let selectUser = users[OwnId].selectedUser;
+      if (selectUser && users[selectUser].viewers) {
+        users[selectUser].viewers.filter((id) => {
+          id === OwnId;
+        });
+      }
       users[OwnId].selectedUser = ToId;
 
-      if (users[ToId]) {
+      if (users[ToId].socketId) {
         if (users[ToId].viewers) {
           users[ToId].viewers.push(OwnId);
         } else {
@@ -66,7 +87,7 @@ io.on("connection", (socket) => {
         }
         io.to(OwnId).emit("state", "online");
       } else {
-        users[ToId] = { viewers: [OwnId] };
+        users[ToId] = { viewers: [OwnId], socketId: null };
         io.to(OwnId).emit("state", "offline");
       }
       const chatData = await Message.findOne({
@@ -74,27 +95,37 @@ io.on("connection", (socket) => {
           $all: [{ $elemMatch: { id: OwnId } }, { $elemMatch: { id: ToId } }],
         },
       });
-      console.log("CD", chatData);
       if (!chatData) return;
-      const result = [];
+
       for (const msg of chatData.messages) {
         const isSender = msg.sender?.id?.toString() === OwnId;
         const isReceiver = msg.reciever?.id?.toString() === OwnId;
-        console.log("se", isSender, isReceiver);
 
         if (isSender || isReceiver) {
+          // If file exists, extract fileName, fileType, fileData
+          let fileName, fileType, fileData;
+          if (msg.file) {
+            fileName = msg.file.fileName;
+            fileType = msg.file.fileType;
+            fileData = msg.file.fileData; // Ensure this is base64 or Buffer as needed by frontend
+          }
+
           const messageData = {
             identifier: msg.identifier,
             text: msg.text,
-            file: msg.file,
+            file: msg.file
+              ? {
+                  fileName,
+                  fileType,
+                  fileData,
+                }
+              : undefined,
             timestamp: msg.timestamp,
           };
-          console.log("SI", socket.id);
 
           if (isSender) {
             io.to(OwnId).emit("storedSendersms", messageData);
           }
-
           if (isReceiver) {
             io.to(OwnId).emit("storedReceiversms", messageData);
           }
@@ -158,7 +189,22 @@ io.on("connection", (socket) => {
     console.log("users", users);
   });
 
+  socket.on("check after reload", ({ OwnId, ToId }) => {
+    if (users[ToId] && users[ToId].socketId) {
+      if (users[ToId].viewers) {
+        users[ToId].viewers.push(OwnId);
+      } else {
+        users[ToId].viewers = [OwnId];
+      }
+      io.to(OwnId).emit("state", "online");
+    } else {
+      users[ToId] = { viewers: [OwnId], socketId: null };
+      io.to(OwnId).emit("state", "offline");
+    }
+  });
+
   socket.on("send message", async (data) => {
+    console.log("drying");
     try {
       const {
         OwnId,
@@ -176,93 +222,107 @@ io.on("connection", (socket) => {
         const filePath = path.join(__dirname, "uploads", fileName);
         fs.writeFileSync(filePath, Buffer.from(fileData));
       }
-      io.to(OwnId).emit("last message", { userId: ToId, sms });
-      io.to(ToId).emit("last message", { userId: OwnId, sms });
-      const user = await User.findById(ToId);
-      io.to(ToId).emit("receive message", {
-        identifier,
-        fileName,
-        fileType,
-        fileData,
-        sms,
-      });
-      // if (user.selectedUser === OwnId) {
-
-      // } else {
-      //   try {
-      //     const existingNotification = await Notification.findOne({
-      //       "sender.id": OwnId,
-      //       "receiver.id": ToId,
-      //     });
-
-      //     const newMessage = {
-      //       identifier,
-      //       text: sms,
-      //       file: fileName ? { fileName, fileType, fileData } : undefined,
-      //       sender_delete: false,
-      //       timestamp: Date.now(),
-      //     };
-
-      //     if (existingNotification) {
-      //       await Notification.updateOne(
-      //         { "sender.id": OwnId, "receiver.id": ToId },
-      //         { $push: { messages: newMessage } }
-      //       );
-      //     } else {
-      //       await Notification.create({
-      //         sender: { id: OwnId, name: OwnName },
-      //         receiver: { id: ToId, name: ToName },
-      //         identifier,
-      //         messages: [newMessage],
-      //       });
-      //     }
-      //   } catch (error) {
-      //     console.error("Error saving notification:", error);
-      //   }
-      // }
-      let existingChat = await Message.findOne({
-        "users.id": { $all: [OwnId, ToId] },
-      });
-      if (existingChat) {
-        existingChat.messages.push({
-          sender: { id: OwnId },
-          reciever: { id: ToId },
-          identifier,
-          text: sms,
-          sender_delete: false,
-          reciever_delete: false,
-          file: {
-            fileName,
-            fileType,
-            fileData,
-          },
-          timestamp: Date.now(),
+      if (fileData) {
+        io.to(OwnId).emit("last message", {
+          userId: ToId,
+          sms,
+          fileType,
+          fileName,
         });
-        await existingChat.save();
+        io.to(ToId).emit("last message", {
+          userId: OwnId,
+          sms,
+          fileType,
+          fileName,
+        });
       } else {
-        let newChat = new Message({
-          users: [
-            { id: OwnId, name: OwnName },
-            { id: ToId, name: ToName },
-          ],
-          messages: [
-            {
-              sender: { id: OwnId },
-              reciever: { id: ToId },
-              identifier,
-              text: sms,
-              sender_delete: false,
-              reciever_delete: false,
-              file: {
-                fileName,
-                fileType,
-                fileData,
-              },
-              timestamp: Date.now(),
-            },
-          ],
+        io.to(OwnId).emit("last message", { userId: ToId, sms });
+        io.to(ToId).emit("last message", { userId: OwnId, sms });
+      }
+
+      if (users[ToId].selectedUser === OwnId) {
+        io.to(ToId).emit("receive message", {
+          identifier,
+          fileName,
+          fileType,
+          fileData,
+          sms,
         });
-        await newChat.save();
+        let existingChat = await Message.findOne({
+          "users.id": { $all: [OwnId, ToId] },
+        });
+        if (existingChat) {
+          existingChat.messages.push({
+            sender: { id: OwnId },
+            reciever: { id: ToId },
+            identifier,
+            text: sms,
+            sender_delete: false,
+            reciever_delete: false,
+            file: {
+              fileName,
+              fileType,
+              fileData,
+            },
+            timestamp: Date.now(),
+          });
+          await existingChat.save();
+        } else {
+          let newChat = new Message({
+            users: [
+              { id: OwnId, name: OwnName },
+              { id: ToId, name: ToName },
+            ],
+            messages: [
+              {
+                sender: { id: OwnId },
+                reciever: { id: ToId },
+                identifier,
+                text: sms,
+                sender_delete: false,
+                reciever_delete: false,
+                file: {
+                  fileName,
+                  fileType,
+                  fileData,
+                },
+                timestamp: Date.now(),
+              },
+            ],
+          });
+          await newChat.save();
+        }
+      } else {
+        try {
+          const existingNotification = await Notification.findOne({
+            "sender.id": OwnId,
+            "receiver.id": ToId,
+          });
+
+          const newMessage = {
+            identifier,
+            text: sms,
+            file: fileName ? { fileName, fileType, fileData } : undefined,
+            sender_delete: false,
+            timestamp: Date.now(),
+          };
+
+          if (existingNotification) {
+            await Notification.updateOne(
+              { "sender.id": OwnId, "receiver.id": ToId },
+              { $push: { messages: newMessage } }
+            );
+          } else {
+            await Notification.create({
+              sender: { id: OwnId, name: OwnName },
+              receiver: { id: ToId, name: ToName },
+              identifier,
+              messages: [newMessage],
+            });
+          }
+        } catch (error) {
+          console.error("Error saving notification:", error);
+        }
       }
     } catch (err) {
       console.error("Message Transfer Error:", err);
@@ -319,7 +379,7 @@ io.on("connection", (socket) => {
 
   socket.on("delete-everyone", async (data) => {
     const { OwnId, ToId, identifier } = data;
-    console.log(OwnId, ToId);
+    console.log("OwnId,ToId", OwnId, ToId);
     try {
       // Step 1: Find the document
       const chat = await Message.findOne({
@@ -350,8 +410,7 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.log(error);
     }
-    const TosocketId = redisClient.hGet(`userId:${ToId}`, "socketId");
-    io.to(TosocketId).emit("delete", { identifier }); // Successfully deleted
+    io.to(ToId).emit("delete", identifier); // Successfully deleted
   });
 
   socket.on("delete-me", async (data) => {
@@ -395,17 +454,23 @@ io.on("connection", (socket) => {
     const match = Object.values(users).find(
       (user) => user.socketId === socket.id
     );
-    console.log("Users", users);
-    console.log("match", match);
-
     if (match && match.viewers) {
       match.viewers.map((socketId) => {
         if (users[socketId].selectedUser === match.id) {
-          io.to(socketId).emit("state", "offline");
+          io.to(socketId).emit("checkDisconnect", "offline");
           console.log("off");
+        }
+        if (users[socketId]?.viewers) {
+          users[socketId].viewers = users[socketId].viewers.filter((id) => {
+            id == match.id;
+          });
         }
       });
     }
+    if (match) {
+      delete users[match.id];
+    }
   });
 });
+
 export { server };

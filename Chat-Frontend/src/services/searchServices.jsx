@@ -6,7 +6,6 @@ import axios from "axios";
 import socket from "../socket.js";
 import { AiOutlineSearch } from "react-icons/ai";
 import { v4 as uuidv4 } from "uuid";
-import { API } from "../Backend_API.js";
 
 const Search = ({ userId, userName }) => {
   const navigate = useNavigate();
@@ -37,7 +36,7 @@ const Search = ({ userId, userName }) => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          `${API}/api/v1/users/userList?userId=${userId}`
+          `/api/v1/users/userList?userId=${userId}`
         );
         if (response.data) {
           const updatedData = response.data.map((data) => ({
@@ -64,7 +63,7 @@ const Search = ({ userId, userName }) => {
 
     try {
       const response = await axios.get(
-        `${API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
@@ -118,27 +117,51 @@ const Search = ({ userId, userName }) => {
     });
   };
 
+  // const handleLastMessage = (data) => {
+  //   const { userId, sms } = data;
+  //   const t = decryptMessage(sms);
+  //   console.log("!@", userId, t);
+  //   // Use the functional update form to ensure we work with the latest state
+  //   setTimeout(() => {
+  //     setRecentUsers((prevUsers) => {
+  //       console.log("AWD", prevUsers);
+  //       return prevUsers.map((user) => {
+  //         return user._id === userId
+  //           ? {
+  //               ...user,
+  //               lastMessage: {
+  //                 ...user.lastMessage,
+  //                 text: decryptMessage(sms),
+  //               },
+  //             }
+  //           : user;
+  //       });
+  //     });
+  //   }, 1000);
+  // };
+
   const handleLastMessage = (data) => {
-    const { userId, sms } = data;
+    const { userId, sms, fileType, fileName } = data;
     const t = decryptMessage(sms);
-    console.log("!@", userId, t);
-    // Use the functional update form to ensure we work with the latest state
     setTimeout(() => {
-      setRecentUsers((prevUsers) => {
-        console.log("AWD", prevUsers);
-        return prevUsers.map((user) => {
-          return user._id === userId
+      setRecentUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user._id === userId
             ? {
                 ...user,
                 lastMessage: {
                   ...user.lastMessage,
-                  text: decryptMessage(sms),
+                  text: fileType
+                    ? "" // No text for files
+                    : t,
+                  fileType,
+                  fileName,
                 },
               }
-            : user;
-        });
-      });
-    }, 100);
+            : user
+        )
+      );
+    }, 1000);
   };
 
   useEffect(() => {
@@ -157,6 +180,13 @@ const Search = ({ userId, userName }) => {
   useEffect(() => {
     searchRecentChat();
   }, [users]);
+
+  // useEffect(() => {
+  //   const storedUsers = localStorage.getItem("recentUsers");
+  //   if (storedUsers) {
+  //     setRecentUsers(JSON.parse(storedUsers));
+  //   }
+  // }, []);
 
   return (
     <div className="flex flex-col items-center mt-10 relative w-full flex-grow">
@@ -185,10 +215,45 @@ const Search = ({ userId, userName }) => {
               alt={user.fullName}
               className="w-10 h-10 rounded-full object-cover"
             />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
+              {" "}
+              {/* min-w-0 is important for truncate */}
               <p className="font-semibold">{user.fullName}</p>
-              <p className="text-gray-600 truncate w-full">
-                {user.lastMessage?.text}
+              <p className="text-gray-600 truncate w-40">
+                {user.lastMessage?.fileType ? (
+                  user.lastMessage.fileType.startsWith("image/") ? (
+                    <>
+                      <span role="img" aria-label="image">
+                        📷
+                      </span>{" "}
+                      Photo
+                    </>
+                  ) : user.lastMessage.fileType.startsWith("video/") ? (
+                    <>
+                      <span role="img" aria-label="video">
+                        🎥
+                      </span>{" "}
+                      Video
+                    </>
+                  ) : (
+                    <>
+                      <span role="img" aria-label="file">
+                        📄
+                      </span>{" "}
+                      {user.lastMessage.fileName
+                        ? user.lastMessage.fileName
+                            .split(".")
+                            .pop()
+                            .toUpperCase() + " file"
+                        : "File"}
+                    </>
+                  )
+                ) : user.lastMessage?.text &&
+                  user.lastMessage.text.length > 40 ? (
+                  user.lastMessage.text.slice(0, 40) + "..."
+                ) : (
+                  user.lastMessage?.text
+                )}
               </p>
             </div>
           </li>
