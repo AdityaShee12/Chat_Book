@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new socketio(server, {
   cors: {
-    origin: "https://real-time-chat-application-1zbh.vercel.app",
+    origin: "https://real-time-chat-application-eta.vercel.app",
     methods: ["GET", "POST"],
     credentials: true,
   },
