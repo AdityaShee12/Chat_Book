@@ -36,7 +36,7 @@ const Search = ({ userId, userName }) => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          `/api/v1/users/userList?userId=${userId}`
+          `${API}/api/v1/users/userList?userId=${userId}`
         );
         if (response.data) {
           const updatedData = response.data.map((data) => ({
@@ -63,7 +63,7 @@ const Search = ({ userId, userName }) => {
 
     try {
       const response = await axios.get(
-        `/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `${API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
@@ -116,29 +116,6 @@ const Search = ({ userId, userName }) => {
       return updatedUsers;
     });
   };
-
-  // const handleLastMessage = (data) => {
-  //   const { userId, sms } = data;
-  //   const t = decryptMessage(sms);
-  //   console.log("!@", userId, t);
-  //   // Use the functional update form to ensure we work with the latest state
-  //   setTimeout(() => {
-  //     setRecentUsers((prevUsers) => {
-  //       console.log("AWD", prevUsers);
-  //       return prevUsers.map((user) => {
-  //         return user._id === userId
-  //           ? {
-  //               ...user,
-  //               lastMessage: {
-  //                 ...user.lastMessage,
-  //                 text: decryptMessage(sms),
-  //               },
-  //             }
-  //           : user;
-  //       });
-  //     });
-  //   }, 1000);
-  // };
 
   const handleLastMessage = (data) => {
     const { userId, sms, fileType, fileName } = data;
