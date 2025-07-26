@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import { debounce } from "lodash";
 import axios from "axios";
 import socket from "../socket.js";
 import { AiOutlineSearch } from "react-icons/ai";
-import { API } from "../Backend_API.js";
 
 const Search = ({ userId, userName }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const secretKey = "0123456789abcdef0123456789abcdef";
   const iv = "abcdef9876543210abcdef9876543210";
-  const [unselectedUsers, setUnselectedUsers] = useState([]);
+  const [selectUser, setSelectUser] = useState(false);
 
   function decryptMessage(encryptedText) {
     const bytes = CryptoJS.AES.decrypt(
@@ -36,7 +35,7 @@ const Search = ({ userId, userName }) => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          `${API}/api/v1/users/userList?userId=${userId}`
+          `/api/v1/users/userList?userId=${userId}`
         );
         if (response.data) {
           const updatedData = response.data.map((data) => ({
@@ -63,7 +62,7 @@ const Search = ({ userId, userName }) => {
 
     try {
       const response = await axios.get(
-        `${API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
@@ -94,6 +93,7 @@ const Search = ({ userId, userName }) => {
   };
 
   const handleSelectUser = (user) => {
+    setSelectUser(true);
     const recieverName = user.fullName.replace(/\s+/g, "");
     navigate(`/layout/chat/${recieverName}`, {
       state: { userId, userName, user },
@@ -158,45 +158,46 @@ const Search = ({ userId, userName }) => {
     searchRecentChat();
   }, [users]);
 
-  // useEffect(() => {
-  //   const storedUsers = localStorage.getItem("recentUsers");
-  //   if (storedUsers) {
-  //     setRecentUsers(JSON.parse(storedUsers));
-  //   }
-  // }, []);
+  useEffect(() => {
+    setSelectUser(location.pathname.startsWith("/layout/chat"));
+  }, [location.pathname]);
 
   return (
-    <div className="flex flex-col items-center mt-10 relative w-full flex-grow">
-      <div className="relative w-full">
+    <div className={`${selectUser ? "lg:block hidden" : "visible"}`}>
+      {/* Searchbar */}
+      <div className="relative flex justify-center mt-[1.2rem] ml-[0.9rem] mr-[0.9rem]">
         <AiOutlineSearch
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-          size={20}
-          style={{ pointerEvents: "none" }}
+          size={21}
+          className="absolute left-[1rem] top-[0.6rem] text-slate-600"
         />
         <input
           type="text"
-          placeholder="Type a name..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="border px-12 py-2 rounded w-full"
+          placeholder="Search or start a new chat"
+          onChange={(e) => {
+            setQuery(e.target.value);
+            fetchUsers(e.target.value);
+          }}
+          className="placeholder-slate-400 pl-[3rem] text-[1rem] w-full h-[2.3rem] border-2 rounded-3xl"
         />
       </div>
-      <ul className="absolute left-0 w-full bg-white border mt-12 rounded shadow-md max-h-48 overflow-auto z-50">
+      {/* Searching list */}
+      <ul className="pt-[1.5rem] pl-[0.6rem]">
         {recentUsers.map((user) => (
           <li
             key={user._id}
-            className="flex items-center gap-3 p-2 transition duration-300 font-mono hover:shadow-lg hover:shadow-sky-400 cursor-pointer"
+            className="flex gap-3 p-2 font-mono"
             onClick={() => handleSelectUser(user)}>
             <img
               src={user.avatar}
-              alt={user.fullName}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-[2.7rem] h-[2.7rem] rounded-full object-cover"
             />
-            <div className="flex flex-col min-w-0">
-              {" "}
+            <div className="flex flex-col">
               {/* min-w-0 is important for truncate */}
-              <p className="font-semibold">{user.fullName}</p>
-              <p className="text-gray-600 truncate w-40">
+              <p className="font-bold text-[1rem] pl-[0.5rem]">
+                {user.fullName}
+              </p>
+              <p className="text-gray-600 text-[1rem] truncate w-40 pl-[0.5rem]">
                 {user.lastMessage?.fileType ? (
                   user.lastMessage.fileType.startsWith("image/") ? (
                     <>
@@ -235,7 +236,7 @@ const Search = ({ userId, userName }) => {
             </div>
           </li>
         ))}
-      </ul>
+      </ul>{" "}
     </div>
   );
 };

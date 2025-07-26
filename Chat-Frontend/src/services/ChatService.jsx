@@ -2,10 +2,24 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import socket from "../socket.js";
-import { AiOutlinePhone, AiOutlineVideoCamera } from "react-icons/ai";
+import {
+  AiOutlineEllipsis,
+  AiOutlinePhone,
+  AiOutlineVideoCamera,
+} from "react-icons/ai";
 import { FiSend, FiPaperclip, FiX } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { FiCopy, FiTrash2, FiStar } from "react-icons/fi";
+import axios from "axios";
+import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
+const configuration = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ],
+};
 
 const ChatPage = () => {
   const [state, setState] = useState("offline");
@@ -28,8 +42,8 @@ const ChatPage = () => {
   const [delFunc, setDelFunc] = useState(false);
   const [everyone, setEveryone] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
   const [isJoined, setIsJoined] = useState(false);
-  const [roomId, setRoomId] = useState("abcd");
   const contextRef = useRef(null);
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
@@ -44,6 +58,102 @@ const ChatPage = () => {
     y: 0,
     message: "",
   });
+  const [isVideo, setIsVideo] = useState(false);
+  let offset = { x: 0, y: 0 };
+  const [isFullScreen, setIsFullScreen] = useState(true);
+  const [localVideoPos, setLocalVideoPos] = useState({ x: 20, y: 20 });
+  const dragRef = useRef(null);
+  const [isSwapped, setIsSwapped] = useState(false);
+  let pressTimer = null;
+  const [profileDetails, setproFileDetails] = useState(false);
+  const profileRef = useRef(null);
+  const [about, setAbout] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState();
+  const [activeSection, setActiveSection] = useState("profile");
+  const [isZoomed, setIsZoomed] = useState(false);
+  const zoomcontext = useRef(null);
+  const [menuAnimation, setMenuAnimation] = useState(false);
+
+  // const [scale, setScale] = useState(1);
+  // const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  // const [isDragging, setIsDragging] = useState(false);
+  // const dragStart = useRef({ x: 0, y: 0 });
+
+  // // Zoom in and zoom out by scrole wheel
+  // const handleWheel = (e) => {
+  //   e.preventDefault();
+  //   const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  //   setScale((prev) => Math.max(1, Math.min(5, prev + delta)));
+  // };
+
+  // // Moving image by drag after Click mouse button
+  // const handleMouseDown1 = (e) => {
+  //   e.preventDefault();
+  //   setIsDragging(true);
+  //   dragStart.current = {
+  //     x: e.clientX - translate.x,
+  //     y: e.clientY - translate.y,
+  //   };
+  // };
+
+  // // Dragging move stop
+  // const handleMouseUp1 = () => {
+  //   setIsDragging(false);
+  // };
+
+  // // touch
+  // const startDrag = (e) => {
+  //   e.preventDefault();
+  //   const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+  //   const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+
+  //   offset = {
+  //     x: clientX - localVideoPos.x,
+  //     y: clientY - localVideoPos.y,
+  //   };
+
+  //   document.addEventListener("mousemove", onDrag);
+  //   document.addEventListener("mouseup", stopDrag);
+  //   document.addEventListener("touchmove", onDrag);
+  //   document.addEventListener("touchend", stopDrag);
+  // };
+  // touch
+  const onDrag = (e) => {
+    const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
+
+    setLocalVideoPos({
+      x: clientX - offset.x,
+      y: clientY - offset.y,
+    });
+  };
+  // touch
+  const stopDrag = () => {
+    document.removeEventListener("mousemove", onDrag);
+    document.removeEventListener("mouseup", stopDrag);
+    document.removeEventListener("touchmove", onDrag);
+    document.removeEventListener("touchend", stopDrag);
+  };
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - translate.x,
+      y: e.clientY - translate.y,
+    };
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      const x = e.clientX - dragStart.current.x;
+      const y = e.clientY - dragStart.current.y;
+      setTranslate({ x, y });
+    } else return;
+  };
+
+  const handleMouseUp = () => {
+    clearTimeout(pressTimer);
+  };
 
   useEffect(() => {
     const recieverFunction = async () => {
@@ -438,324 +548,608 @@ const ChatPage = () => {
     textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px"; // Max height 200px
   };
 
-  const createPeerConnection = () => {
-    if (!localStream) return;
+  const getStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      setLocalStream(stream);
+      localVideoRef.current.srcObject = stream;
+      return stream;
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+    }
+  };
 
+  const createPeerConnection = async () => {
+    let stream = localStream;
+    if (!stream) stream = await getStream();
     peerConnectionRef.current = new RTCPeerConnection(configuration);
-
-    localStream.getTracks().forEach((track) => {
-      peerConnectionRef.current.addTrack(track, localStream);
-    });
-
     peerConnectionRef.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("ice-candidate", event.candidate, roomId);
+        socket.emit("ice-candidate", event.candidate, ToId);
+      } else {
+        console.log("Candidate not work");
+      }
+    };
+    peerConnectionRef.current.ontrack = (event) => {
+      if (event.streams[0]) {
+        setRemoteStream(event.streams[0]);
+        remoteVideoRef.current.srcObject = event.streams[0];
+        console.log("Succes");
+      } else {
+        console.log("not success");
+      }
+    };
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        peerConnectionRef.current.addTrack(track, stream);
+      });
+      console.log("G");
+    }
+  };
+
+  const createOffer = async () => {
+    const offer = await peerConnectionRef.current.createOffer();
+    await peerConnectionRef.current.setLocalDescription(offer);
+    socket.emit("offer", offer, ToId);
+  };
+
+  useEffect(() => {
+    socket.on("offer", async (offer) => {
+      setIsVideo(true);
+      // Peer connection তৈরি না থাকলে নতুন বানাও
+      if (!peerConnectionRef.current) {
+        await createPeerConnection(); // getStream() এর ভেতরেও await আছে
+      }
+      const pc = peerConnectionRef.current;
+      // Remote Description set করা (safe check সহ)
+      if (
+        pc.signalingState === "stable" ||
+        pc.signalingState === "have-local-offer"
+      ) {
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        console.log("✅ Remote offer set");
+        const answer = await peerConnectionRef.current.createAnswer();
+        await peerConnectionRef.current.setLocalDescription(answer);
+        socket.emit("answer", answer, ToId);
+      } else {
+        console.warn(
+          "⚠ Cannot set offer, invalid signaling state:",
+          pc.signalingState
+        );
+        return;
+      }
+    });
+    const handleAnswer = async (answer) => {
+      const pc = peerConnectionRef.current;
+      if (!pc) return;
+
+      console.log("Before setting answer, signalingState:", pc.signalingState);
+
+      if (
+        pc.signalingState === "have-local-offer" &&
+        pc.remoteDescription === null
+      ) {
+        try {
+          await pc.setRemoteDescription(answer);
+          console.log("✅ Remote answer set successfully");
+        } catch (err) {
+          console.error("❌ Error setting remote answer:", err);
+        }
+      } else {
+        console.warn("⚠ Skipping answer: Already stable or answer set");
       }
     };
 
-    peerConnectionRef.current.ontrack = (event) => {
-      setRemoteStream(event.streams[0]);
-      remoteVideoRef.current.srcObject = event.streams[0];
+    socket.on("ice-candidate", async (candidate) => {
+      const pc = peerConnectionRef.current;
+      if (pc && candidate) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log("✅ ICE candidate added");
+        } catch (error) {
+          console.error("❌ Error adding ICE candidate:", error);
+        }
+      }
+    });
+
+    socket.on("answer", handleAnswer);
+    return () => {
+      socket.off("offer");
+      socket.off("answer");
+      socket.off("ice-candidate");
     };
+  }, []);
+
+  const videoCallSystem = async () => {
+    setIsVideo(true);
+    await getStream();
+    await createPeerConnection();
+    await createOffer();
   };
 
-  socket.on("answer", async (answer) => {
-    if (peerConnectionRef.current) {
-      await peerConnectionRef.current.setRemoteDescription(answer);
+  const closeZoom = () => {
+    setIsZoomed(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (zoomcontext.current && !zoomcontext.current.contains(event.target)) {
+        closeZoom();
+      }
+    };
+
+    if (isZoomed) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
     }
-  });
 
-  socket.on("offer", async (offer) => {
-    if (!peerConnectionRef.current) createPeerConnection();
-    await peerConnectionRef.current.setRemoteDescription(offer);
-    const answer = await peerConnectionRef.current.createAnswer();
-    await peerConnectionRef.current.setLocalDescription(answer);
-    socket.emit("answer", answer, roomId);
-  });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isZoomed]);
 
-  const initiateCall = async () => {
-    if (!peerConnectionRef.current) return;
-    const offer = await peerConnectionRef.current.createOffer();
-    await peerConnectionRef.current.setLocalDescription(offer);
-    socket.emit("offer", offer, roomId);
-  };
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        closeprofileContext();
+      }
+    };
 
-  socket.on("ice-candidate", async (candidate) => {
-    if (peerConnectionRef.current) {
-      await peerConnectionRef.current.addIceCandidate(candidate);
-      initiateCall();
+    if (profileDetails) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
     }
-  });
 
-  socket.on("joined", () => {
-    setIsJoined(true);
-    createPeerConnection();
-  });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileDetails]);
 
-  const videoCallSystem = () => {
-    socket.emit("join-room", ToId);
+  const openProfileContext = (e) => {
+    e.preventDefault();
+    setproFileDetails(true);
+    setMenuAnimation(false);
+    setTimeout(() => setMenuAnimation(true), 300);
   };
+
+  useEffect(() => {
+    console.log("profile", profileDetails);
+  }, [profileDetails]);
+
+  const closeprofileContext = () => {
+    setproFileDetails(false);
+    setMenuAnimation(false);
+  };
+
+  const overview = (e) => {
+    e.preventDefault();
+    setActiveSection("profile");
+  };
+
+  const media = (e) => {
+    e.preventDefault();
+    setActiveSection("media");
+  };
+
+  const files = (e) => {
+    e.preventDefault();
+    setActiveSection("files");
+  };
+
+  const links = (e) => {
+    e.preventDefault();
+    setActiveSection("links");
+  };
+
+  const groups = (e) => {
+    e.preventDefault();
+    setActiveSection("groups");
+  };
+
+  useEffect(() => {
+    const profile = async () => {
+      setTimeout(async () => {
+        try {
+          const response = await axios.get(
+            `/api/v1/users/profile?userId=${ToId}`
+          );
+          console.log("Res", response);
+          setAbout(response.data.data.about);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        }
+      }, 100);
+    };
+    profile();
+  }, [activeSection]);
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-200 flex-none">
+    <div className="flex flex-col items-center justify-between mt-[0.7rem] pl-[0.9rem] pr-[0.9rem]">
+      {/* profile */}
+      <div
+        className="flex justify-between items-center w-full rounded-lg bg-gray-200 h-[4rem] cursor-pointer"
+        onClick={(e) => openProfileContext(e)}>
+        {/* profile pic, name and state */}
         <div className="flex items-center gap-4">
+          {" "}
           <img
             src={dp}
             alt=""
-            className="w-12 h-12 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover ml-[0.4rem]"
           />
           <div className="flex flex-col justify-center">
             <h2 className="text-lg font-semibold">{ToName}</h2>
             <p className="text-sm text-gray-600">{state}</p>
           </div>
         </div>
-      </div>
-
-      {/* Chat Messages */}
-      {/* <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex ${
-              msg.sender === "You" ? "justify-end" : "justify-start"
-            }`}>
-            <div
-              className="relative"
-              onContextMenu={(e) => openContextMenu(msg, e)}>
-              {msg.fileURL ? (
-                msg.fileType?.startsWith("image/") ? (
-                  <img
-                    src={msg.fileURL}
-                    alt="Sent Image"
-                    className="w-40 h-40 object-cover rounded-lg"
-                    onClick={() => setSelectedImage(msg.fileURL)}
-                  />
-                ) : msg.fileType?.startsWith("video/") ? (
-                  <video
-                    src={msg.fileURL}
-                    controls
-                    className="w-60 rounded-lg"
-                  />
-                ) : (
-                  <a
-                    href={msg.fileURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-black text-white px-3 py-2 rounded-lg min-w-[100px] max-w-[60%] break-words">
-                    📄 {msg.fileName}
-                  </a>
-                )
-              ) : null}
-
-              {msg.message && (
-                <span className="inline-block font-mono bg-black text-white px-3 py-2 rounded-lg min-w-[100px] max-w-[60%] break-words mt-2">
-                  {msg.message}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div> */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex w-full ${
-              msg.sender === "You" ? "justify-end" : "justify-start"
-            }`}>
-            <div
-              className={`relative flex flex-col ${
-                msg.sender === "You" ? "items-end" : "items-start"
-              }`}
-              onContextMenu={(e) => openContextMenu(msg, e)}
-              style={{ width: "fit-content", maxWidth: "60%" }}>
-              {msg.fileURL ? (
-                msg.fileType?.startsWith("image/") ? (
-                  <img
-                    src={msg.fileURL}
-                    alt="Sent Image"
-                    className="w-40 h-40 object-cover rounded-lg"
-                    onClick={() => setSelectedImage(msg.fileURL)}
-                  />
-                ) : msg.fileType?.startsWith("video/") ? (
-                  <video
-                    src={msg.fileURL}
-                    controls
-                    className="w-60 rounded-lg"
-                  />
-                ) : (
-                  <a
-                    href={msg.fileURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-black text-white px-3 py-2 rounded-lg min-w-[80px] max-w-full break-words block">
-                    📄 {msg.fileName}
-                  </a>
-                )
-              ) : null}
-              {msg.message && (
-                <div
-                  className="font-mono bg-black text-white px-3 py-2 rounded-lg min-w-[80px] max-w-full break-words whitespace-pre-line mt-2 block"
-                  style={{
-                    wordBreak: "break-word",
-                    minWidth: "80px",
-                    maxWidth: "100%",
-                    whiteSpace: "pre-line",
-                  }}>
-                  {msg.message}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Context Menu */}
-      {contextMenu.show && (
-        <div
-          ref={contextRef}
-          className="absolute rounded-lg shadow-lg bg-slate-100 text-black"
-          style={{
-            left: contextMenu.x,
-            top: contextMenu.y,
-            position: "absolute",
-            zIndex: 10,
-          }}>
-          <div className="flex flex-col w-44 rounded-lg overflow-hidden">
-            <div
-              className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2"
-              onClick={() => {
-                copyFunction();
-              }}>
-              <FiCopy size={16} />
-              <span>Copy</span>
-            </div>
-            <div className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2">
-              <FiStar size={16} />
-              <span>Star</span>
-            </div>
-            <div
-              className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2"
-              onClick={() => {
-                deleteFunction();
-              }}>
-              <FiTrash2 size={16} />
-              <span>Delete</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation */}
-      {delFunc && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-4 w-64">
-            <p className="text-center mb-3 text-gray-800">
-              Delete this message?
-            </p>
-            {everyone ? (
-              <>
-                <button
-                  className="w-full py-2 text-red-600 hover:bg-gray-200 rounded"
-                  onClick={() => Delete("You")}>
-                  Delete for everyone
-                </button>
-                <button
-                  className="w-full py-2 text-gray-800 hover:bg-gray-200 rounded"
-                  onClick={() => Delete("Me")}>
-                  Delete for me
-                </button>
-              </>
-            ) : (
-              <button
-                className="w-full py-2 text-gray-800 hover:bg-gray-200 rounded"
-                onClick={() => Delete("Me1")}>
-                Delete for me{" "}
-              </button>
-            )}
-            <button
-              className="w-full py-2 text-gray-500 hover:bg-gray-200 rounded mt-2"
-              onClick={() => setDelFunc(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Full Image Preview */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80"
-          onClick={() => setSelectedImage(null)}>
-          <img
-            src={selectedImage}
-            alt="Full Size"
-            className="max-w-full max-h-full"
+        {/* VideoCamera */}
+        <div>
+          <AiOutlineVideoCamera
+            size={27}
+            className="mr-[0.5rem]"
+            onClick={videoCallSystem}
           />
         </div>
-      )}
+      </div>
+      {profileDetails && (
+        <div
+          ref={profileRef}
+          className={`absolute z-10 w-[30rem] h-[29rem] rounded-lg shadow-md bg-slate-200 mt-[4rem]`}>
+          <div className="flex h-full">
+            {/* left side */}
+            <div className="flex flex-col pt-3 pl-5 gap-4 bg-slate-300 w-[8rem] ">
+              <div onClick={(e) => overview(e)} className="cursor-pointer">
+                Overview
+              </div>
+              <div onClick={(e) => media(e)} className="cursor-pointer">
+                Media
+              </div>
+              <div onClick={(e) => files(e)} className="cursor-pointer">
+                Links
+              </div>
+              <div onClick={(e) => links(e)} className="cursor-pointer">
+                Files
+              </div>
+              <div onClick={(e) => groups(e)} className="cursor-pointer">
+                Groups
+              </div>
+            </div>
+            {/* right side */}
+            <div>
+              {activeSection === "profile" && (
+                <div>
+                  <div className="flex flex-col items-center p-4 rounded-lg overflow-hidden">
+                    {/* Profile Picture Section */}
+                    <div
+                      className={`${
+                        isZoomed
+                          ? "fixed bg-black flex justify-center items-center inset-0 z-50 "
+                          : "relative w-28 h-28"
+                      }`}>
+                      <div
+                        className={`${
+                          isZoomed
+                            ? "absolute z-50 left-7 top-7 text-white"
+                            : "hidden"
+                        }`}
+                        onClick={() => {
+                          setIsZoomed(false);
+                        }}>
+                        <IoArrowBack size={24} className="cursor-pointer" />
+                      </div>
+                      {isZoomed ? (
+                        <TransformWrapper
+                          initialScale={1}
+                          wheel={{ step: 0.1 }}
+                          pinch={{ step: 5 }}
+                          doubleClick={{ disabled: true }}>
+                          {" "}
+                          <TransformComponent>
+                            <img
+                              src={dp}
+                              alt="profile"
+                              className="w-[48vw] h-[95vh]"
+                            />{" "}
+                          </TransformComponent>
+                        </TransformWrapper>
+                      ) : (
+                        <img
+                          src={dp}
+                          alt=""
+                          onClick={() => setIsZoomed(true)}
+                          className=" 
+                          absolute w-28 h-28 rounded-full cursor-pointer"
+                        />
+                      )}
+                    </div>
+                    <h2 className="text-xl font-bold mt-3">{ToName}</h2>
+                    <div className="flex justify-center gap-10 py-5 w-full">
+                      <div className="bg-slate-100 w-[9rem] h-[4rem] px-[3.5rem] py-[0.5rem] cursor-pointer">
+                        <AiOutlineVideoCamera
+                          size={27}
+                          className="mr-[0.5rem] "
+                          onClick={videoCallSystem}
+                        />
+                        <p>Video</p>
+                      </div>
+                      <div className="bg-slate-100 w-[9rem] h-[4rem] px-[3.5rem] py-[0.5rem] cursor-pointer">
+                        <AiOutlinePhone
+                          size={27}
+                          className="mr-[0.5rem] rotate-90"
+                          onClick={videoCallSystem}
+                        />
+                        <p>Video</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Name */}
 
-      {/* Footer */}
-      <div className="p-3 bg-white flex-none flex items-center border-t">
-        {file && (
-          <div className="flex items-center p-2 bg-gray-100 rounded-lg mb-2">
-            <img
-              src={filePreview}
-              alt="Preview"
-              className="w-12 h-12 object-cover rounded-lg"
+                  <div className="pl-[0.9rem] mb-[1rem]">
+                    About
+                    <p>{about}</p>
+                  </div>
+                  <div className="pl-[0.9rem]  mb-[1rem]">
+                    Phone number
+                    <p>{phoneNumber}</p>
+                  </div>
+                  <div className="flex justify-between px-[0.9rem] h-[2.5rem]">
+                    <div className="bg-slate-100  flex justify-center items-center w-[9rem] cursor-pointer">
+                      Block
+                    </div>
+                    <div className="bg-slate-100 flex justify-center items-center w-[9rem] cursor-pointer">
+                      Report contact
+                    </div>
+                  </div>
+                </div>
+              )}
+              {activeSection === "media" && <MediaComponent />}
+              {activeSection === "files" && <FilesComponent />}
+              {activeSection === "links" && <LinksComponent />}
+              {activeSection === "groups" && <GroupsComponent />}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Video Call System */}
+      {isVideo && (
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center transition-all duration-300 ${
+            isFullScreen
+              ? "w-full h-full"
+              : "w-[300px] h-[300px] rounded-lg overflow-hidden"
+          }`}
+          onClick={() => setIsFullScreen(!isFullScreen)}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchEnd={handleMouseUp}>
+          {/* Big Video (can be remote or local based on swap) */}
+          <video
+            ref={isSwapped ? localVideoRef : remoteVideoRef}
+            autoPlay
+            muted={isSwapped} // Only mute if local is big
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Small Draggable Video (can be remote or local based on swap) */}
+          <div
+            ref={dragRef}
+            className="absolute w-[120px] h-[120px] border-2 border-white rounded-lg overflow-hidden cursor-move"
+            style={{
+              top: localVideoPos.y,
+              left: localVideoPos.x,
+            }}
+            onMouseDown={startDrag}
+            onTouchStart={startDrag}>
+            <video
+              ref={isSwapped ? remoteVideoRef : localVideoRef}
+              autoPlay
+              muted={!isSwapped}
+              playsInline
+              className="w-full h-full object-cover"
             />
-            <span className="truncate">{file.name}</span>
-            <button
-              onClick={() => {
-                setFile(null);
-                setFilePreview(null);
-              }}
-              className="ml-2">
-              <FiX size={20} className="text-gray-600 hover:text-red-500" />
-            </button>
+          </div>
+        </div>
+      )}
+      {/* Message section */}
+      <div className="flex flex-col w-full">
+        <div
+          ref={chatContainerRef}
+          className="lg:h-[73vh] h-[78.5vh] overflow-y-auto p-4 ">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex w-full ${
+                msg.sender === "You" ? "justify-end" : "justify-start"
+              }`}>
+              <div
+                className={`relative flex flex-col ${
+                  msg.sender === "You" ? "items-end" : "items-start"
+                }`}
+                onContextMenu={(e) => openContextMenu(msg, e)}
+                style={{ width: "fit-content", maxWidth: "60%" }}>
+                {msg.fileURL ? (
+                  msg.fileType?.startsWith("image/") ? (
+                    <img
+                      src={msg.fileURL}
+                      alt="Sent Image"
+                      className="w-40 h-40 object-cover rounded-lg"
+                      onClick={() => setSelectedImage(msg.fileURL)}
+                    />
+                  ) : msg.fileType?.startsWith("video/") ? (
+                    <video
+                      src={msg.fileURL}
+                      controls
+                      className="w-60 rounded-lg"
+                    />
+                  ) : (
+                    <a
+                      href={msg.fileURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-black text-white px-3 py-2 rounded-lg min-w-[80px] max-w-full break-words block">
+                      📄 {msg.fileName}
+                    </a>
+                  )
+                ) : null}
+                {msg.message && (
+                  <div
+                    className="font-mono bg-black text-white px-3 py-2 rounded-lg min-w-[80px] max-w-full break-words whitespace-pre-line mt-2 block"
+                    style={{
+                      wordBreak: "break-word",
+                      minWidth: "80px",
+                      maxWidth: "100%",
+                      whiteSpace: "pre-line",
+                    }}>
+                    {msg.message}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Context Menu */}
+        {contextMenu.show && (
+          <div
+            ref={contextRef}
+            className="absolute rounded-lg shadow-lg bg-slate-100 text-black"
+            style={{
+              left: contextMenu.x,
+              top: contextMenu.y,
+              position: "absolute",
+              zIndex: 10,
+            }}>
+            <div className="flex flex-col w-44 rounded-lg overflow-hidden">
+              <div
+                className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2"
+                onClick={() => {
+                  copyFunction();
+                }}>
+                <FiCopy size={16} />
+                <span>Copy</span>
+              </div>
+              <div className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2">
+                <FiStar size={16} />
+                <span>Star</span>
+              </div>
+              <div
+                className="cursor-pointer p-2 hover:bg-slate-200 flex items-center gap-2"
+                onClick={() => {
+                  deleteFunction();
+                }}>
+                <FiTrash2 size={16} />
+                <span>Delete</span>
+              </div>
+            </div>
           </div>
         )}
-
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="p-2 rounded-full hover:bg-gray-200 transition">
-          <FiPaperclip size={24} />
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
-        <textarea
-          ref={messageInputRef}
-          value={message}
-          onChange={handleChange}
-          placeholder="Type a message..."
-          className="w-full px-3 py-2 border rounded-lg resize-none overflow-x-hidden overflow-y-hidden max-h-52"
-          rows={1}
-          style={{ minHeight: "40px" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-        />
-
-        <button
-          onClick={sendMessage}
-          className="p-2 rounded-full hover:bg-gray-200 transition">
-          <FiSend size={24} />
-        </button>
-      </div>
+        {/* Delete Confirmation */}
+        {delFunc && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg p-4 w-64">
+              <p className="text-center mb-3 text-gray-800">
+                Delete this message?
+              </p>
+              {everyone ? (
+                <>
+                  <button
+                    className="w-full py-2 text-red-600 hover:bg-gray-200 rounded"
+                    onClick={() => Delete("You")}>
+                    Delete for everyone
+                  </button>
+                  <button
+                    className="w-full py-2 text-gray-800 hover:bg-gray-200 rounded"
+                    onClick={() => Delete("Me")}>
+                    Delete for me
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="w-full py-2 text-gray-800 hover:bg-gray-200 rounded"
+                  onClick={() => Delete("Me1")}>
+                  Delete for me{" "}
+                </button>
+              )}
+              <button
+                className="w-full py-2 text-gray-500 hover:bg-gray-200 rounded mt-2"
+                onClick={() => setDelFunc(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {/* Full Image Preview */}
+        {selectedImage && (
+          <div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80"
+            onClick={() => setSelectedImage(null)}>
+            <img
+              src={selectedImage}
+              alt="Full Size"
+              className="max-w-full max-h-full"
+            />
+          </div>
+        )}
+        {/* Footer(Typing place) */}
+        <div className="relative flex items-center h-[4rem]">
+          {file && (
+            <div className="flex items-center p-2 bg-gray-100 rounded-lg mb-2">
+              <img
+                src={filePreview}
+                alt="Preview"
+                className="w-12 h-12 object-cover rounded-lg"
+              />
+              <span className="truncate">{file.name}</span>
+              <button
+                onClick={() => {
+                  setFile(null);
+                  setFilePreview(null);
+                }}
+                className="ml-2">
+                <FiX size={20} className="text-gray-600 hover:text-red-500" />
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute pl-[0.7rem] rounded-full hover:bg-gray-200 transition">
+            <FiPaperclip size={20} />
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <textarea
+            ref={messageInputRef}
+            value={message}
+            onChange={handleChange}
+            placeholder="Type a message..."
+            className="bg-slate-200 w-full h-[3.5rem] leading-[3.5rem] rounded-3xl pl-[2.7rem] text-[1.3rem] "
+            rows={1}
+            style={{ minHeight: "40px" }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            className="p-1 rounded-full hover:bg-gray-200 transition">
+            <FiSend size={30} />
+          </button>
+        </div>
+      </div>{" "}
     </div>
   );
 };

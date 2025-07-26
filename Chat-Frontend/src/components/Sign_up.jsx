@@ -1,63 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/userService";
-import { API } from "../Backend_API";
 
 const Sign_up = () => {
-  const [step1, setStep1] = useState(true);
+  const [profilepic, setProfilepic] = useState(false);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [verif, setVerif] = useState(true);
   const [verifyOtp, setVerifyOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(true);
   const [registeremail, setregisterEmail] = useState("");
   const [otpVerified, setotpVerified] = useState(false);
-  // Sign_up
+  const [createAccount, setCreateAccount] = useState(false);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [avatar, setAvatar] = useState(null);
-  const [about, setAbout] = useState();
-  const [coverImage, setCoverImage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [about, setAbout] = useState("");
   const navigate = useNavigate();
 
+  // OAuth login
   const login = () => {
-    window.open("https://real-time-chat-application-klxp.onrender.com/auth/google", "_self");
+    window.open("http://localhost:8000/auth/google", "_self");
   };
 
+  // send OTP
   const sendOtp = async () => {
     try {
-      const response = await axios.post(`${API}/api/v1/users/otp`, { email });
+      const response = await axios.post("/api/v1/users/otp", { email });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);
       setVerifyOtp(response.data.data.otp);
       setregisterEmail(response.data.data.email);
-      setOtpSent(true);
-      setVerif(false);
+      setOtpSent(false);
+      setotpVerified(true);
     } catch (error) {
       console.error("Try again", error);
     }
   };
 
+  // Verify OTP
   const verify = () => {
     console.log(otp, verifyOtp);
 
     if (otp === verifyOtp) {
       console.log("V", registeremail);
-      setOtpSent(false);
-      setotpVerified(true);
+      setotpVerified(false);
+      setCreateAccount(true);
     } else {
       console.log("You gave the wrong OTP");
     }
   };
 
+  // Sign IN
   const signIn = () => {
     navigate("/sign_in");
   };
 
+  // Choose Avatar
+  const chooseAvatar = () => {
+    setCreateAccount(false);
+    setProfilepic(true);
+  };
+
+  // Handling registration
   const handleRegister = async (e) => {
     e.preventDefault();
 
@@ -77,186 +84,147 @@ const Sign_up = () => {
       const userId = response.data._id;
       navigate("/layout", { state: { userId, userName } });
     } catch (error) {
-      // Detailed error handling
-      if (error.response) {
-        // Server responded with a status other than 2xx
-        console.error("Error Response:", error.response);
-        setErrorMessage(
-          `Error: ${error.response.data.message || "Something went wrong"}`
-        );
-      } else if (error.request) {
-        // Request was made but no response was received
-        console.error("Error Request:", error.request);
-        setErrorMessage("No response from server. Please try again.");
-      } else {
-        // Something else happened while setting up the request
-        console.error("Error Message:", error.message);
-        setErrorMessage(error.message);
-      }
+      console.log(error);
     }
   };
 
-  const step2 = () => {
-    setStep1(false);
-  };
-
   return (
-    <div className="h-screen p-4 flex flex-col items-center justify-center space-y-4">
-      {/* Main Signup/Login Box */}
-      <div className="max-w-xs sm:max-w-sm md:max-w-md w-full p-8 rounded-xl flex flex-col items-center border border-gray-300">
-        <h1 className="text-4xl text-center font-bold mb-4 font-mono">
-          Chat_Book
-        </h1>
-        <p className="text-lg text-center mb-6 font-mono">
-          Sign up to experience seamless chatting, file sharing, video calls,
-          and upload stories.
-        </p>{" "}
-        {step1 === true && (
+    <div className="flex flex-col items-center">
+      <div className="font-mono text-[3rem] pt-[4rem] pb-[4rem] lg:text-[3.5rem] xl:text-[3rem] xl:p-[3rem]">
+        ChatBook
+      </div>
+      <div
+        className="w-[70vw] h-auto border border-slate-400 rounded-md flex flex-col items-center lg:w-[30rem]
+        xl:w-[30vw] xl:h-auto
+      ">
+        {otpSent && (
           <>
-            {verif && (
-              <button
-                onClick={login}
-                className="mb-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Login with Google
-              </button>
-            )}
-            {verif && (
-              <div className="flex flex-col space-y-4 w-full">
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none bg-slate-100"
-                />
-                <button
-                  onClick={sendOtp}
-                  className="w-full text-black font-bold py-2 px-4 rounded transition duration-300 font-mono hover:shadow-lg hover:shadow-sky-400 border border-gray-300 text-center">
-                  Send OTP
-                </button>
-              </div>
-            )}
-            {otpSent && (
-              <div className="w-full mt-4">
-                <input
-                  id="otp"
-                  type="text"
-                  placeholder="Enter your OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none bg-slate-100"
-                />
-                <button
-                  onClick={verify}
-                  className="mt-3 w-full text-black font-bold py-2 px-4 rounded transition duration-300 font-mono hover:shadow-lg hover:shadow-sky-400 border border-gray-300 text-center">
-                  Verify OTP
-                </button>
-              </div>
-            )}
-            {otpVerified && (
-              <>
-                <div className="w-full mt-4">
-                  <input
-                    id="fullName"
-                    type="text"
-                    placeholder="Full Name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-
-                <div className="w-full mt-4">
-                  <input
-                    id="username"
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-
-                <div className="w-full mt-4">
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="mt-4 w-full text-black font-bold py-2 px-4 rounded transition duration-300 font-mono hover:shadow-lg hover:shadow-sky-400 border border-gray-300 text-center"
-                  onClick={step2}>
-                  Next
-                </button>
-              </>
-            )}
+            <button
+              className="m-[18%] bg-blue-700 text-white text-[1.3rem] rounded-xl w-[60vw] h-[7vh] lg:m-[15%] lg:w-[39vw] lg:text-[1.7rem]
+            xl:w-[25vw] xl:text-[1rem] xl:m-[8%]">
+              Login with Google
+            </button>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+              }}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
+            />
+            <button
+              onClick={sendOtp}
+              className="w-[60vw] h-[7vh] m-[8%] border rounded-xl border-slate-400 text-xl font-semibold lg:w-[39vw] lg:text-[1.7rem]  xl:w-[25vw] xl:text-[1rem]
+              transition duration-300 hover:shadow-lg hover:shadow-sky-400">
+              Send OTP
+            </button>
+            <button
+              className="w-[60vw] h-[7vh] border rounded-xl mb-[10%] border-slate-400 text-xl font-semibold lg:w-[39vw] lg:text-[1.7rem]  xl:w-[25vw] xl:text-[1rem]"
+              onClick={signIn}>
+              Sign in
+            </button>
           </>
         )}
-        {step1 === false && (
+        {otpVerified && (
           <>
-            <div className="w-full flex flex-col items-center mt-6">
-              <label className="relative cursor-pointer">
-                <div className="w-32 h-32 rounded-full border-2 border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center shadow-md">
-                  {avatar ? (
-                    <img
-                      src={URL.createObjectURL(avatar)}
-                      alt="Avatar"
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <span className="text-gray-400 text-sm">Upload</span>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setAvatar(e.target.files[0])}
-                  className="hidden"
+            <input
+              type="number"
+              value={otp}
+              onChange={(e) => {
+                setOtp(e.target.value);
+              }}
+              placeholder="Enter your OTP"
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]"
+            />
+            <button
+              onClick={verify}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] mb-[18%] lg:mb-[15%] xl:mb-[8%]">
+              Verify your OTP
+            </button>
+          </>
+        )}
+        {createAccount && (
+          <>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+              }}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]"
+            />
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+              }}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+              }}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] mt-[18%] lg:mt-[15%] xl:mt-[8%]"
+            />
+            <button
+              onClick={chooseAvatar}
+              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]  transition duration-300 hover:shadow-lg hover:shadow-sky-400">
+              Next
+            </button>
+          </>
+        )}
+      </div>
+      {profilepic && (
+        <div className="w-[20rem] flex flex-col items-center border md:w-[34rem] lg:w-[30rem] xl:w-[26rem] h-auto border-slate-400 rounded-xl">
+          <label className="cursor-pointer">
+            <div className="bg-slate-300 w-[10rem] h-[10rem] rounded-full flex justify-center items-center m-[1rem]">
+              {avatar ? (
+                <img
+                  src={URL.createObjectURL(avatar)}
+                  alt="Problem occur on photo"
+                  className="h-full rounded-full"
                 />
-              </label>
-              <textarea
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-                placeholder="Write something about yourself..."
-                className="mt-4 w-full p-2 border border-gray-300 rounded shadow-sm resize-none"
-                rows={4}
-              />
-              <button
-                onClick={handleRegister}
-                className="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow">
-                Sign up
-              </button>
+              ) : (
+                <div>Upload profilepic</div>
+              )}
             </div>
-          </>
-        )}
-        <button
-          onClick={signIn}
-          className="mt-4 w-full text-black font-bold py-2 px-4 rounded transition duration-300 font-mono hover:shadow-lg hover:shadow-sky-400 border border-gray-300 text-center">
-          Sign in
-        </button>
-      </div>
-
-      {/* "Have an account? Log in" Box */}
-      <div className="max-w-xs sm:max-w-sm md:max-w-md w-full p-4 rounded-xl flex items-center justify-center border border-gray-300 text-gray-700 text-center">
-        Have an account?{" "}
-        <a href="/sign_in" className="ml-1 text-blue-500 hover:underline">
-          Log in
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                setAvatar(e.target.files[0]);
+              }}
+              className="hidden"
+            />
+          </label>
+          <textarea
+            value={about}
+            onChange={(e) => {
+              setAbout(e.target.value);
+            }}
+            className="w-[65vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[10%] lg:m-[15%] xl:m-[3%] xl:mt-[5%]"
+            placeholder="Write something about yourself..."></textarea>
+          <button
+            onClick={handleRegister}
+            className="w-[65vw] h-[5vh] border border-slate-400 text-xl rounded-xl pl-2 mb-[1.3rem]  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]  transition duration-300 hover:shadow-lg hover:shadow-sky-400">
+            Next
+          </button>
+        </div>
+      )}
+      <p className="text-center text-gray-600 m-7 border border-slate-400 rounded-md md:w-[34rem] md:text-[2rem] lg:text-[1.4rem] lg:w-[30rem] xl:text-[1rem] xl:w-[26rem] h-auto p-4 ">
+        Already have an account?{" "}
+        <a href="/sign_in" className="text-blue-500 hover:underline">
+          Login here
         </a>
-      </div>
+      </p>
     </div>
   );
 };
-
 export default Sign_up;

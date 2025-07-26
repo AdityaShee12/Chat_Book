@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { loginUser } from "../services/userService.jsx";
 import { useNavigate } from "react-router-dom";
-
 const Sign_in = () => {
-  const [username, setUsername] = useState("");
+  const [userName, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -11,16 +10,19 @@ const Sign_in = () => {
     e.preventDefault();
 
     const credentials = {
-      username,
+      userName,
       email,
       password,
     };
 
     try {
       const response = await loginUser(credentials);
-      const userName = response.data.user.fullName;
-      const userId = response.data.user._id;
-      navigate("/layout", { state: { userId, userName } });
+      console.log("Return value...", response);
+      console.log("res", response.status);
+
+      navigate("/layout", {
+        state: { userId: response.data.user._id, userName },
+      });
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -28,7 +30,7 @@ const Sign_in = () => {
 
   return (
     <div className="h-screen p-4 flex flex-col items-center justify-center space-y-4">
-      <div className="max-w-xs sm:max-w-sm md:max-w-md w-full p-8 rounded-xl flex flex-col  items-center border border-gray-300 space-y-4">
+      <div className="max-w-xl sm:max-w-sm md:max-w-md w-full p-8 rounded-xl flex flex-col  items-center border border-gray-300 space-y-4">
         <h1 className="text-4xl text-center font-bold mb-4 font-mono">
           Chat_Book
         </h1>
@@ -36,7 +38,7 @@ const Sign_in = () => {
           id="email"
           type="email"
           placeholder="Phone number, username or email"
-          value={username}
+          value={userName}
           onChange={(e) => setUsername(e.target.value)}
           required
           className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none bg-slate-100"

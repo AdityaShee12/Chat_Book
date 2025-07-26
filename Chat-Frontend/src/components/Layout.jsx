@@ -13,17 +13,16 @@ import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
 import Zoom from "react-medium-image-zoom";
-import { API } from "../Backend_API.js";
+import AiAssistant from "../services/AiAssistant.jsx";
 
 const Layout = () => {
   const location = useLocation();
   const name = location.state?.userName;
   const userId = location.state?.userId;
-  const user = {};
   const [dp, setDp] = useState();
   const [about, setAbout] = useState();
   const [email, setEmail] = useState();
-  const [sidebarWidth, setSidebarWidth] = useState(20); // Sidebar width in percentage
+  const [searchbarWidth, setSearchbarWidth] = useState(30); // Sidebar width in percentage
   const [showFullImage, setShowFullImage] = useState(false);
   const contextRef = useRef(null);
   const navigate = useNavigate();
@@ -31,12 +30,17 @@ const Layout = () => {
   const [editedAbout, setEditedAbout] = useState(about);
   const [originalY, setOriginalY] = useState(null);
   const [fullName, setFullName] = useState("");
+  const [dragStyle, setDragStyle] = useState("");
+  const [barStyle, setBarStyle] = useState("");
+  const windowWidth = window.innerWidth;
   const [contextMenu, setContextMenu] = useState({
     show: false,
     x: 0,
     y: 0,
   });
+  const [menuAnimation, setMenuAnimation] = useState(false);
 
+  // useeffect for contextMenu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (contextRef.current && !contextRef.current.contains(event.target)) {
@@ -58,6 +62,8 @@ const Layout = () => {
   // Mouse Drag to Resize Sidebar
   const handleMouseDown = (e) => {
     e.preventDefault();
+    setDragStyle("cursor-ew-resize");
+    setBarStyle("w-[1rem]");
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
@@ -65,35 +71,34 @@ const Layout = () => {
   const handleMouseMove = (e) => {
     e.preventDefault();
     const newWidth = (e.clientX / window.innerWidth) * 100;
-    if (newWidth >= 20 && newWidth <= 50) {
-      setSidebarWidth(newWidth);
+    if (newWidth >= 30 && newWidth <= 70) {
+      setSearchbarWidth(newWidth);
     }
   };
 
   const handleMouseUp = () => {
+    setDragStyle("");
+    setBarStyle("");
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
 
+  // open context menu
   const openContextMenu = (event) => {
-    event.preventDefault();
     const rect = event.target.getBoundingClientRect();
-
-    let positionX = rect.left + 50;
-    let positionY = rect.top + window.scrollY;
-    const menuHeight = 350; // Approximate height of context menu
-    const menuWidth = 260; // Approximate width of context menu
+    let positionX = rect.left - 20;
+    let positionY = rect.top;
+    const menuHeight = 265; // Approximate height of context menu
+    const menuWidth = 268; // Approximate width of context menu
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-
     // Adjust vertically if overflowing bottom
     if (rect.top + menuHeight > viewportHeight) {
-      positionY = rect.top + window.scrollY - menuHeight;
+      positionY = rect.top - menuHeight;
     }
-
     // Adjust horizontally if overflowing right
     if (rect.left + menuWidth > viewportWidth) {
-      positionX = rect.right - menuWidth - padding;
+      positionX = rect.right - menuWidth;
     }
     setOriginalY(positionY);
     setContextMenu({
@@ -101,8 +106,11 @@ const Layout = () => {
       x: positionX,
       y: positionY,
     });
+    setMenuAnimation(false);
+    setTimeout(() => setMenuAnimation(true), 300);
   };
 
+  // close context menu
   const closeContextMenu = () => {
     setContextMenu({
       show: false,
@@ -111,37 +119,13 @@ const Layout = () => {
     });
   };
 
-  useEffect(() => {
-    if (contextMenu.show && contextRef.current) {
-      const menuHeight = contextRef.current.offsetHeight;
-      const viewportHeight = window.innerHeight;
-      const overflowY = originalY + menuHeight;
-
-      if (overflowY > viewportHeight) {
-        // Adjust upwards if overflow
-        const adjustedY = Math.max(viewportHeight - menuHeight - 60, 10);
-        setContextMenu((prev) => ({
-          ...prev,
-          y: adjustedY,
-        }));
-      } else {
-        // If editing turned off, reset to original Y
-        if (!isEditing) {
-          setContextMenu((prev) => ({
-            ...prev,
-            y: originalY,
-          }));
-        }
-      }
-    }
-  }, [contextMenu.show, isEditing, originalY]);
-
+  // show profile
   useEffect(() => {
     const profile = async () => {
       setTimeout(async () => {
         try {
           const response = await axios.get(
-            `${API}/api/v1/users/profile?userId=${userId}`
+            `/api/v1/users/profile?userId=${userId}`
           );
           console.log("Res", response);
 
@@ -157,6 +141,7 @@ const Layout = () => {
     profile();
   }, [dp, about, email]);
 
+  // Update profile pic
   const handleProfilePicChange = async (e) => {
     const file = e.target.files?.[0] || null;
     const formData = new FormData();
@@ -165,7 +150,7 @@ const Layout = () => {
 
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profilePicChange`,
+        "/api/v1/users/profilePicChange",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -178,10 +163,11 @@ const Layout = () => {
     }
   };
 
+  // Update about section
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profileAboutChange`,
+        "/api/v1/users/profileAboutChange",
         {
           userId,
           about: editedText,
@@ -197,9 +183,10 @@ const Layout = () => {
     }
   };
 
+  // Logout
   const handleLogout = async () => {
     const response = await axios.post(
-      `${API}/api/v1/users/logout`,
+      "/api/v1/users/logout",
       {},
       {
         withCredentials: true,
@@ -209,54 +196,62 @@ const Layout = () => {
     return response.data;
   };
 
-  return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="bg-gray-200 px-4 py-3 flex items-center flex-none h-16">
-        <h2 className="text-lg font-semibold">Chat-Book</h2>
-      </div>
+  // Ai implementation
+  const AiAssistant = async () => {
+    navigate("/layout/AiAssistant");
+  };
 
-      {/* Main Content (Sidebar + Search Section) */}
-      <div className="flex flex-1 min-h-0">
-        {/* Left Fixed Sidebar */}
-        <div className="w-16 flex flex-col justify-between items-center py-6 flex-none">
+  return (
+    <div className={`flex flex-col h-screen overflow-hidden ${dragStyle}`}>
+      {/* Header no hand */}
+      <h2 className="font-mono text-[1.5rem] pt-[0.3rem] pl-[0.9rem] xl:pl-[0.7rem] bg-slate-200">
+        ChatBook
+      </h2>
+      {/* Main Content (Sidebar + Search Section + outlet) */}
+      <div className="lg:flex flex-1">
+        {/* Left content(icons) */}
+        <div className="hidden lg:flex flex-col justify-between items-center py-6 bg-slate-200">
           {/* Upper Icons (3 icons) */}
-          <div className="space-y-6 flex flex-col justify-between items-center">
+          <div className="flex flex-col justify-between items-center gap-[1.5rem]">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-gray-200 transition">
+              className="p-2 rounded-full hover:bg-gray-200">
               <AiOutlineMessage size={24} />
             </button>
             <button
               onClick={() => AiAssistant()}
-              className="p-2 rounded-full hover:bg-gray-200 transition rotate-90">
+              className="p-2 rounded-full hover:bg-gray-200">
               <SiOpenai size={24} />
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-gray-200 transition">
+              className="p-2 rounded-full hover:bg-gray-200">
               <AiOutlineEye size={24} />
             </button>
           </div>
-
           {/* Bottom Icons (2 icons) */}
-          <div className="space-y-6 flex flex-col justify-between items-center mt-10">
+          <div className="flex flex-col justify-between items-center gap-[1.8rem] mt-[15rem]">
+            <button className="p-2 rounded-full hover:bg-gray-200">
+              <AiOutlineSetting size={24} />
+            </button>
             <button
-              className="p-2 rounded-full hover:bg-gray-200 transition"
+              className="p-2 rounded-full hover:bg-gray-200"
               onClick={(e) => {
                 openContextMenu(e);
               }}>
               <AiOutlineUser size={24} />
             </button>
-
             {contextMenu.show && (
               <div
                 ref={contextRef}
-                className="absolute rounded-xl p-4 w-72 z-50 shadow-2xl border border-blue-200 max-h-[350px] overflow-y-auto"
+                className={`absolute rounded-xl w-72 h-72 p-4 z-50 shadow-2xl border bg-slate-400 translate-x-4 transition-all duration-300 ease-out ${
+                  menuAnimation
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-20"
+                }`}
                 style={{
                   top: contextMenu.y,
                   left: contextMenu.x,
-                  background: "linear-gradient(135deg, #f0f4ff, #dceeff)",
                 }}
                 onClick={(e) => e.stopPropagation()}>
                 {/* Profile section */}
@@ -327,7 +322,6 @@ const Layout = () => {
                 </button>
               </div>
             )}
-
             {showFullImage && (
               <div
                 className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999]"
@@ -341,25 +335,19 @@ const Layout = () => {
             )}
           </div>
         </div>
-
-        {/* Resizable Search Section */}
+        {/* Resizable Searchbar */}
         <div
-          className="bg-gray-100 p-4 border-r border-gray-300 flex-none transition-all duration-200"
           style={{
-            width: `${sidebarWidth}%`,
-            minWidth: "20%",
-            maxWidth: "50%",
+            width: windowWidth < 1024 ? "100%" : `${searchbarWidth - 3.5}%`,
           }}>
           <Search userId={userId} userName={name} />
         </div>
-
         {/* Draggable Resizer */}
         <div
-          className="w-1 bg-slate-400 cursor-ew-resize flex-none"
+          className={`hidden lg:block w-[0.1rem] bg-slate-400 cursor-ew-resize hover:w-[1rem] ${barStyle}`}
           onMouseDown={handleMouseDown}></div>
-
         {/* Right Content (ChatPage via Outlet) */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="w-full cursor-pointer">
           <Outlet />
         </div>
       </div>
