@@ -218,16 +218,6 @@ const Layout = () => {
               className="p-2 rounded-full hover:bg-gray-200">
               <AiOutlineMessage size={24} />
             </button>
-            <button
-              onClick={() => AiAssistant()}
-              className="p-2 rounded-full hover:bg-gray-200">
-              <SiOpenai size={24} />
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-gray-200">
-              <AiOutlineEye size={24} />
-            </button>
           </div>
           {/* Bottom Icons (2 icons) */}
           <div className="flex flex-col justify-between items-center gap-[1.8rem] mt-[15rem]">
