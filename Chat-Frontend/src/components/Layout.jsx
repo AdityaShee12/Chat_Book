@@ -13,7 +13,6 @@ import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
 import Zoom from "react-medium-image-zoom";
-import AiAssistant from "../services/AiAssistant.jsx";
 
 const Layout = () => {
   const location = useLocation();
