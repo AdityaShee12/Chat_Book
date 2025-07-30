@@ -16,7 +16,6 @@ const App = createBrowserRouter(
       <Route path="/sign_in" element={<Sign_in />} />
       <Route path="/layout" element={<Layout />}>
         <Route path="chat/:userName" element={<ChatPage />} />
-        <Route path="AiAssistant" element={<AiAssistant />} />
       </Route>
     </>
   )
