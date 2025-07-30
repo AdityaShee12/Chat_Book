@@ -8,7 +8,6 @@ import Sign_up from "./components/Sign_up.jsx";
 import Sign_in from "./components/Sign_in.jsx";
 import Layout from "./components/Layout.jsx";
 import ChatPage from "./services/ChatService.jsx";
-import AiAssistant from "./services/AiAssistant.jsx";
 const App = createBrowserRouter(
   createRoutesFromElements(
     <>
