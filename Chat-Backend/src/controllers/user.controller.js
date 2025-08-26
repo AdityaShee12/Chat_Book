@@ -151,7 +151,6 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -236,7 +235,7 @@ const profileAboutChange = asyncHandler(async (req, res) => {
 const searchUser = asyncHandler(async (req, res) => {
   try {
     const { query, userId } = req.query;
-    if (!query) return res.json([]); 
+    if (!query) return res.json([]);
     const users = await User.find({
       fullName: { $regex: query, $options: "i" },
       _id: { $ne: userId },
