@@ -192,7 +192,7 @@ const Search = ({ userId, userName }) => {
               src={user.avatar}
               className="w-[2.7rem] h-[2.7rem] rounded-full object-cover"
             />
-            <div className="flex flex-col">
+            <div className="flex flex-col ">
               {/* min-w-0 is important for truncate */}
               <p className="font-bold text-[1rem] pl-[0.5rem]">
                 {user.fullName}

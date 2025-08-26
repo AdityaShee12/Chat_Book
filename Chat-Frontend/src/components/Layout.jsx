@@ -1,15 +1,12 @@
 import { useState } from "react";
 import {
   AiOutlineMessage,
-  AiOutlinePhone,
-  AiOutlineEye,
   AiOutlineSetting,
   AiOutlineUser,
 } from "react-icons/ai";
 import { FaCamera, FaPen } from "react-icons/fa";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import Search from "../services/searchServices.jsx"; // Import Search component
-import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
 import Zoom from "react-medium-image-zoom";

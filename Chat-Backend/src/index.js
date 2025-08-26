@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import { server } from "./chatIO.js";
+
 dotenv.config({ path: "./.env" });
 
 // Original
