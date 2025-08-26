@@ -1,28 +1,36 @@
 import React, { useState } from "react";
 import { loginUser } from "../services/userService.jsx";
 import { useNavigate } from "react-router-dom";
+import {
+  setUserId,
+  setUserName,
+  setUserAvatar,
+  setUserAbout,
+} from "../features/userSlice";
+import { useDispatch } from "react-redux";
+
 const Sign_in = () => {
-  const [userName, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
     const credentials = {
-      userName,
+      fullName,
       email,
       password,
     };
-
     try {
-      const response = await loginUser(credentials);
-      console.log("Return value...", response);
-      console.log("res", response.status);
-
-      navigate("/layout", {
-        state: { userId: response.data.user._id, userName },
-      });
+      const user = await loginUser(credentials);
+      console.log(user);
+      dispatch(setUserId({ userId: user.data.loggedInUser._id }));
+      dispatch(setUserName({ userName: user.data.loggedInUser.fullName }));
+      dispatch(setUserAvatar({ userAvatar: user.data.loggedInUser.avatar }));
+      dispatch(setUserAbout({ userAbout: user.data.loggedInUser.about }));
+      navigate("/layout");
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -38,8 +46,8 @@ const Sign_in = () => {
           id="email"
           type="email"
           placeholder="Phone number, username or email"
-          value={userName}
-          onChange={(e) => setUsername(e.target.value)}
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
           required
           className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none bg-slate-100"
         />
@@ -61,7 +69,7 @@ const Sign_in = () => {
       </div>
       <div className="max-w-xs sm:max-w-sm md:max-w-md w-full p-4 rounded-xl flex items-center justify-center border border-gray-300 text-gray-700 text-center">
         Don't have an account?
-        <a href="/" className="ml-1 text-blue-500 hover:underline">
+        <a href="/sign_up" className="ml-1 text-blue-500 hover:underline">
           {" "}
           Sign up
         </a>

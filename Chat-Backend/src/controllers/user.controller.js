@@ -51,7 +51,6 @@ const sendOtp = asyncHandler(async (req, res) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, username, password, about } = req.body;
-
   if (
     [fullName, email, username, password].some((field) => field?.trim() === "")
   ) {
@@ -66,9 +65,8 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  const avatarLocalPath = req.files?.avatar?.[0]?.path;
+  const avatarLocalPath = req.files?.avatar[0]?.path;
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  console.log(avatar);
 
   const googleId = uuidv4();
 
@@ -76,7 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
     googleId,
     fullName,
     email,
-    avatar: avatar?.url?.replace("http://", "https://") || "",
+    avatar: avatar?.url || "",
     about,
     password,
     username: username.toLowerCase(),
@@ -90,8 +88,20 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+    user._id
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+  };
+
   return res
     .status(201)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
 });
 
