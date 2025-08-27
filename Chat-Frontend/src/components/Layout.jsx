@@ -17,6 +17,7 @@ import StatusUpload from "../services/statusUpload.jsx";
 import AiAssistant from "../services/AiAssistant.jsx";
 import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { API } from "../Backend_API.js";
 
 const Layout = () => {
   const [email, setEmail] = useState();
@@ -132,7 +133,7 @@ const Layout = () => {
 
     try {
       const response = await axios.post(
-        "/api/v1/users/profilePicChange",
+        `${API}/api/v1/users/profilePicChange`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -149,7 +150,7 @@ const Layout = () => {
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        "/api/v1/users/profileAboutChange",
+        `${API}/api/v1/users/profileAboutChange`,
         {
           userId,
           about: editedText,
@@ -168,7 +169,7 @@ const Layout = () => {
   // Logout
   const handleLogout = async () => {
     const response = await axios.post(
-      "/api/v1/users/logout",
+      `${API}/api/v1/users/logout`,
       { userId },
       {
         withCredentials: true,
