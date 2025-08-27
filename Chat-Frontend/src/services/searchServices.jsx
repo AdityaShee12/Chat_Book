@@ -7,6 +7,7 @@ import socket from "../socket.js";
 import { AiOutlineSearch } from "react-icons/ai";
 import { setSelectUser } from "../features/userSlice.js";
 import { useDispatch, useSelector } from "react-redux";
+import { API } from "../Backend_API.js";
 
 const Search = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const Search = () => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          `/api/v1/users/userList?userId=${userId}`
+          `${API}/api/v1/users/userList?userId=${userId}`
         );
         console.log("Res", response);
 
@@ -71,7 +72,7 @@ const Search = () => {
     }
     try {
       const response = await axios.get(
-        `/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `${API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
