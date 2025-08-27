@@ -10,6 +10,7 @@ import axios from "axios";
 import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useSelector } from "react-redux";
+import { API } from "../Backend_API.js";
 
 const configuration = {
   iceServers: [
@@ -712,7 +713,7 @@ const ChatPage = () => {
       console.log("receiverProfile", receiverId, receiverName, receiverAvatar);
       try {
         const response = await axios.get(
-          `/api/v1/users/profile?userId=${receiverId}`
+          `${API}/api/v1/users/profile?userId=${receiverId}`
         );
         console.log("Res", response);
         setAbout(response.data.data.about);
