@@ -2,16 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import socket from "../socket.js";
-import {
-  AiOutlinePhone,
-  AiOutlineVideoCamera,
-} from "react-icons/ai";
+import { AiOutlinePhone, AiOutlineVideoCamera } from "react-icons/ai";
 import { FiSend, FiPaperclip, FiX } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { FiCopy, FiTrash2, FiStar } from "react-icons/fi";
 import axios from "axios";
 import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useSelector } from "react-redux";
 
 const configuration = {
   iceServers: [
@@ -25,13 +23,12 @@ const ChatPage = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [file, setFile] = useState(null);
-  const location = useLocation();
-  const OwnId = location.state?.userId;
-  const OwnName = location.state?.userName;
-  const reciever = location.state?.user;
-  const ToId = reciever?._id;
-  const ToName = reciever?.fullName;
-  const dp = reciever?.avatar;
+  const {
+    userId,
+    userName,
+    userAvatar,
+    selectUser: { receiverId, receiverName, receiverAvatar },
+  } = useSelector((state) => state.user);
   const secretKey = "0123456789abcdef0123456789abcdef";
   const iv = "abcdef9876543210abcdef9876543210";
   const chatContainerRef = useRef(null);
@@ -72,7 +69,52 @@ const ChatPage = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const zoomcontext = useRef(null);
   const [menuAnimation, setMenuAnimation] = useState(false);
+  const [requestState, setRequestState] = useState("");
 
+  // const [scale, setScale] = useState(1);
+  // const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  // const [isDragging, setIsDragging] = useState(false);
+  // const dragStart = useRef({ x: 0, y: 0 });
+
+  // // Zoom in and zoom out by scrole wheel
+  // const handleWheel = (e) => {
+  //   e.preventDefault();
+  //   const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  //   setScale((prev) => Math.max(1, Math.min(5, prev + delta)));
+  // };
+
+  // // Moving image by drag after Click mouse button
+  // const handleMouseDown1 = (e) => {
+  //   e.preventDefault();
+  //   setIsDragging(true);
+  //   dragStart.current = {
+  //     x: e.clientX - translate.x,
+  //     y: e.clientY - translate.y,
+  //   };
+  // };
+
+  // // Dragging move stop
+  // const handleMouseUp1 = () => {
+  //   setIsDragging(false);
+  // };
+
+  // // touch
+  // const startDrag = (e) => {
+  //   e.preventDefault();
+  //   const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+  //   const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+
+  //   offset = {
+  //     x: clientX - localVideoPos.x,
+  //     y: clientY - localVideoPos.y,
+  //   };
+
+  //   document.addEventListener("mousemove", onDrag);
+  //   document.addEventListener("mouseup", stopDrag);
+  //   document.addEventListener("touchmove", onDrag);
+  //   document.addEventListener("touchend", stopDrag);
+  // };
+  // touch
   const onDrag = (e) => {
     const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
@@ -110,11 +152,17 @@ const ChatPage = () => {
     clearTimeout(pressTimer);
   };
 
+  // Handling Message
   useEffect(() => {
     const recieverFunction = async () => {
       try {
         console.log("on1");
-        socket.emit("reciever add", { OwnId, ToId });
+        socket.emit("reciever add", {
+          userId,
+          userName,
+          receiverId,
+          receiverName,
+        });
       } catch (error) {
         console.log("RA Err", error);
       }
@@ -125,57 +173,59 @@ const ChatPage = () => {
     socket.on("checkDisconnect", (state) => {
       setState(state);
       setTimeout(() => {
-        socket.emit("check after reload", { OwnId, ToId });
+        socket.emit("check after reload", { userId, receiverId });
       }, 2000);
     });
 
-    socket.on("storedSendersms", (messageData) => {
-      const { identifier, text, file, timestamp } = messageData;
-      const sms = decryptMessage(text);
-
+    socket.on("storedSendersms", (message) => {
+      const { sender, relation, identifier, text, file, timestamp } = message;
+      let sms;
       let fileURL = null;
       let fileName = null;
       let fileType = null;
+      let user;
+      if (relation === "sent") {
+        console.log("work");
 
-      if (file && file.fileData && file.fileType) {
-        // For images, videos, pdf, etc.
-        fileURL = `data:${file.fileType};base64,${file.fileData}`;
-        fileName = file.fileName || null;
-        fileType = file.fileType || null;
+        if (sender.id === userId) {
+          sms = "You sent friendrequest to " + receiverName;
+        } else {
+          sms = receiverName + "sent friendrequest to you";
+        }
+      } else if (relation === "accept") {
+        if (sender.id === userId) {
+          sms = "You accepted friendrequest of " + receiverName;
+        } else {
+          sms = receiverName + "accepted your friendrequest";
+        }
+      } else if (relation === "reject") {
+        if (sender.id === userId) {
+          sms = "You rejected friendrequest of " + receiverName;
+        } else {
+          sms = receiverName + "rejected your friendrequest";
+        }
+      } else {
+        if (text) {
+          sms = decryptMessage(text);
+        }
+        if (sender.id === userId) {
+          user = "You";
+        } else {
+          user = "receiver";
+        }
+
+        if (file && file.fileData && file.fileType) {
+          // For images, videos, pdf, etc.
+          fileURL = `data:${file.fileType};base64,${file.fileData}`;
+          fileName = file.fileName || null;
+          fileType = file.fileType || null;
+        }
       }
 
       setMessages((prev) => [
         ...prev,
         {
-          sender: "You",
-          identifier,
-          message: sms,
-          fileName,
-          fileType,
-          fileURL,
-          timestamp,
-        },
-      ]);
-    });
-
-    socket.on("storedReceiversms", (messageData) => {
-      const { identifier, text, file, timestamp } = messageData;
-      const sms = decryptMessage(text);
-
-      let fileURL = null;
-      let fileName = null;
-      let fileType = null;
-
-      if (file && file.fileData && file.fileType) {
-        fileURL = `data:${file.fileType};base64,${file.fileData}`;
-        fileName = file.fileName || null;
-        fileType = file.fileType || null;
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "Sender",
+          sender: user,
           identifier,
           message: sms,
           fileName,
@@ -188,7 +238,6 @@ const ChatPage = () => {
 
     socket.on("receive message", (data) => {
       const { identifier, fileName, fileType, fileData, sms } = data;
-      console.log("IDENTI", identifier);
       let message =
         typeof sms === "string" && !sms.startsWith("http")
           ? decryptMessage(sms)
@@ -205,7 +254,14 @@ const ChatPage = () => {
       }
       setMessages((prev) => [
         ...prev,
-        { sender: "Sender", identifier, message, fileName, fileType, fileURL },
+        {
+          sender: "Sender",
+          identifier,
+          message,
+          fileName,
+          fileType,
+          fileURL,
+        },
       ]);
     });
 
@@ -216,16 +272,18 @@ const ChatPage = () => {
   }, []);
 
   function decryptMessage(encryptedText) {
-    const bytes = CryptoJS.AES.decrypt(
-      encryptedText,
-      CryptoJS.enc.Hex.parse(secretKey),
-      {
-        iv: CryptoJS.enc.Hex.parse(iv),
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      }
-    );
-    return bytes.toString(CryptoJS.enc.Utf8);
+    if (encryptMessage) {
+      const bytes = CryptoJS.AES.decrypt(
+        encryptedText,
+        CryptoJS.enc.Hex.parse(secretKey),
+        {
+          iv: CryptoJS.enc.Hex.parse(iv),
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+      return bytes.toString(CryptoJS.enc.Utf8);
+    }
   }
 
   useEffect(() => {
@@ -235,67 +293,14 @@ const ChatPage = () => {
     }
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!message.trim() && !file) return;
-    const sms = encryptMessage(message);
-    let fileData;
-    let fileType;
-    let fileURL;
-    let fileName;
-    if (file) {
-      fileData = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsArrayBuffer(file);
-      });
-      fileName = file.name;
-      fileType = file.type;
-      fileURL = URL.createObjectURL(
-        new Blob([new Uint8Array(fileData)], { type: fileType })
-      );
-    }
-    const identifier = uuidv4();
-    console.log("IDENTI", identifier);
-
-    const sendItem = {
-      OwnId,
-      OwnName,
-      ToId,
-      ToName,
-      identifier,
-      sms,
-      fileName,
-      fileType,
-      fileData,
-    };
-    if (state === "online") {
-      socket.emit("send message", sendItem);
-      setMessages((prev) => [
-        ...prev,
-        { sender: "You", identifier, message, fileName, fileType, fileURL },
-      ]);
-      setFile(null);
-      fileInputRef.current.value = "";
-      if (message) setMessage("");
-    } else {
-      socket.emit("offline_User sms", sendItem);
-      console.log("offline");
-      setMessages((prev) => [
-        ...prev,
-        { sender: "You", identifier, message, fileName, fileType, fileURL },
-      ]);
-      setFile(null);
-      fileInputRef.current.value = "";
-      if (message) setMessage("");
-    }
-  };
-
   function encryptMessage(message) {
-    return CryptoJS.AES.encrypt(message, CryptoJS.enc.Hex.parse(secretKey), {
-      iv: CryptoJS.enc.Hex.parse(iv),
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7,
-    }).toString();
+    if (message) {
+      return CryptoJS.AES.encrypt(message, CryptoJS.enc.Hex.parse(secretKey), {
+        iv: CryptoJS.enc.Hex.parse(iv),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      }).toString();
+    }
   }
 
   const handleFileChange = (e) => {
@@ -477,7 +482,6 @@ const ChatPage = () => {
       const copiedMessage = prevMessages.find(
         (msg) => msg.identifier === identifier
       );
-
       if (copiedMessage) {
         navigator.clipboard
           .writeText(copiedMessage.message || "")
@@ -488,10 +492,8 @@ const ChatPage = () => {
             console.error("Failed to copy message:", err);
           });
       }
-
       return prevMessages;
     });
-
     closeContextMenu();
   };
 
@@ -523,7 +525,7 @@ const ChatPage = () => {
     peerConnectionRef.current = new RTCPeerConnection(configuration);
     peerConnectionRef.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("ice-candidate", event.candidate, ToId);
+        socket.emit("ice-candidate", event.candidate, receiverId);
       } else {
         console.log("Candidate not work");
       }
@@ -548,7 +550,7 @@ const ChatPage = () => {
   const createOffer = async () => {
     const offer = await peerConnectionRef.current.createOffer();
     await peerConnectionRef.current.setLocalDescription(offer);
-    socket.emit("offer", offer, ToId);
+    socket.emit("offer", offer, receiverId);
   };
 
   useEffect(() => {
@@ -568,7 +570,7 @@ const ChatPage = () => {
         console.log("✅ Remote offer set");
         const answer = await peerConnectionRef.current.createAnswer();
         await peerConnectionRef.current.setLocalDescription(answer);
-        socket.emit("answer", answer, ToId);
+        socket.emit("answer", answer, receiverId);
       } else {
         console.warn(
           "⚠ Cannot set offer, invalid signaling state:",
@@ -577,6 +579,7 @@ const ChatPage = () => {
         return;
       }
     });
+
     const handleAnswer = async (answer) => {
       const pc = peerConnectionRef.current;
       if (!pc) return;
@@ -635,13 +638,11 @@ const ChatPage = () => {
         closeZoom();
       }
     };
-
     if (isZoomed) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -708,20 +709,184 @@ const ChatPage = () => {
 
   useEffect(() => {
     const profile = async () => {
-      setTimeout(async () => {
-        try {
-          const response = await axios.get(
-            `/api/v1/users/profile?userId=${ToId}`
-          );
-          console.log("Res", response);
-          setAbout(response.data.data.about);
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-        }
-      }, 100);
+      console.log("receiverProfile", receiverId, receiverName, receiverAvatar);
+      try {
+        const response = await axios.get(
+          `/api/v1/users/profile?userId=${receiverId}`
+        );
+        console.log("Res", response);
+        setAbout(response.data.data.about);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
     };
     profile();
   }, [activeSection]);
+
+  // Code of sending Message
+  const sendMessage = async () => {
+    if (!message.trim() && !file) return;
+    const sms = encryptMessage(message);
+    let fileData;
+    let fileType;
+    let fileURL;
+    let fileName;
+    if (file) {
+      fileData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsArrayBuffer(file);
+      });
+      fileName = file.name;
+      fileType = file.type;
+      fileURL = URL.createObjectURL(
+        new Blob([new Uint8Array(fileData)], { type: fileType })
+      );
+    }
+    const identifier = uuidv4();
+    const sendItem = {
+      userId,
+      userName,
+      userAvatar,
+      receiverId,
+      receiverName,
+      receiverAvatar,
+      identifier,
+      sms,
+      fileName,
+      fileType,
+      fileData,
+    };
+    if (state === "online") {
+      socket.emit("send message", sendItem);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "You", identifier, message, fileName, fileType, fileURL },
+      ]);
+      setFile(null);
+      fileInputRef.current.value = "";
+      if (message) setMessage("");
+    } else {
+      socket.emit("offline_User sms", sendItem);
+      console.log("offline");
+      setMessages((prev) => [
+        ...prev,
+        { sender: "You", identifier, message, fileName, fileType, fileURL },
+      ]);
+      setFile(null);
+      fileInputRef.current.value = "";
+      if (message) setMessage("");
+    }
+  };
+
+  // Code for checking friend or not
+  socket.on("friends", (data) => {
+    const { requestState } = data;
+    if (requestState === "reject") {
+      setRequestState("reject");
+    } else if (requestState === "sent") {
+      setRequestState("sent");
+    } else if (requestState === "friend") {
+      setRequestState("friend");
+    } else {
+      setRequestState("noFriend");
+    }
+  });
+
+  // Code for sending request
+  const sendRequest = () => {
+    const identifier = uuidv4();
+    socket.emit("sendRequest", {
+      userId,
+      userName,
+      userAvatar,
+      receiverId,
+      receiverName,
+      receiverAvatar,
+      identifier,
+    });
+    console.log("Rec", receiverName);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "You",
+        identifier,
+        message: "You sent friendrequest to " + receiverName,
+      },
+    ]);
+  };
+
+  //  Code for accept or reject requests
+  const replyRequest = async (accept) => {
+    const identifier = uuidv4();
+    // Code for accept request
+    if (accept) {
+      socket.emit("acceptRequest", {
+        userId,
+        userName,
+        userAvatar,
+        receiverId,
+        receiverName,
+        receiverAvatar,
+        identifier,
+        accept,
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "sender",
+          identifier,
+          message: `You accepted ${receiverName}'s request`,
+        },
+      ]);
+      setRequestState("friend");
+    }
+    // Code for reject request
+    else {
+      socket.emit("acceptRequest", {
+        userId,
+        userName,
+        userAvatar,
+        receiverId,
+        receiverName,
+        receiverAvatar,
+        identifier,
+        accept,
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "sender",
+          identifier,
+          message: "You rejected friendrequest of " + receiverName,
+        },
+      ]);
+    }
+  };
+
+  // Code for accept or reject reply
+  socket.on("requestReply", (accept) => {
+    if (accept) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "sender",
+          identifier,
+          message: `${receiverName} accepted your request`,
+        },
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "sender",
+          identifier,
+          message: `${receiverName} rejected your request`,
+        },
+      ]);
+    }
+  });
 
   return (
     <div className="flex flex-col items-center justify-between mt-[0.7rem] pl-[0.9rem] pr-[0.9rem]">
@@ -733,12 +898,12 @@ const ChatPage = () => {
         <div className="flex items-center gap-4">
           {" "}
           <img
-            src={dp}
+            src={receiverAvatar}
             alt=""
             className="w-12 h-12 rounded-full object-cover ml-[0.4rem]"
           />
           <div className="flex flex-col justify-center">
-            <h2 className="text-lg font-semibold">{ToName}</h2>
+            <h2 className="text-lg font-semibold">{receiverName}</h2>
             <p className="text-sm text-gray-600">{state}</p>
           </div>
         </div>
@@ -806,7 +971,7 @@ const ChatPage = () => {
                           {" "}
                           <TransformComponent>
                             <img
-                              src={dp}
+                              src={receiverAvatar}
                               alt="profile"
                               className="w-[48vw] h-[95vh]"
                             />{" "}
@@ -814,7 +979,7 @@ const ChatPage = () => {
                         </TransformWrapper>
                       ) : (
                         <img
-                          src={dp}
+                          src={receiverAvatar}
                           alt=""
                           onClick={() => setIsZoomed(true)}
                           className=" 
@@ -822,7 +987,7 @@ const ChatPage = () => {
                         />
                       )}
                     </div>
-                    <h2 className="text-xl font-bold mt-3">{ToName}</h2>
+                    <h2 className="text-xl font-bold mt-3">{receiverName}</h2>
                     <div className="flex justify-center gap-10 py-5 w-full">
                       <div className="bg-slate-100 w-[9rem] h-[4rem] px-[3.5rem] py-[0.5rem] cursor-pointer">
                         <AiOutlineVideoCamera
@@ -913,6 +1078,7 @@ const ChatPage = () => {
       )}
       {/* Message section */}
       <div className="flex flex-col w-full">
+        {/* Showing Message */}
         <div
           ref={chatContainerRef}
           className="lg:h-[73vh] h-[78.5vh] overflow-y-auto p-4 ">
@@ -1050,61 +1216,125 @@ const ChatPage = () => {
             />
           </div>
         )}
-        {/* Footer(Typing place) */}
-        <div className="relative flex items-center h-[4rem]">
-          {file && (
-            <div className="flex items-center p-2 bg-gray-100 rounded-lg mb-2">
-              <img
-                src={filePreview}
-                alt="Preview"
-                className="w-12 h-12 object-cover rounded-lg"
-              />
-              <span className="truncate">{file.name}</span>
-              <button
-                onClick={() => {
-                  setFile(null);
-                  setFilePreview(null);
-                }}
-                className="ml-2">
-                <FiX size={20} className="text-gray-600 hover:text-red-500" />
-              </button>
-            </div>
-          )}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="absolute pl-[0.7rem] rounded-full hover:bg-gray-200 transition">
-            <FiPaperclip size={20} />
-          </button>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <textarea
-            ref={messageInputRef}
-            value={message}
-            onChange={handleChange}
-            placeholder="Type a message..."
-            className="bg-slate-200 w-full h-[3.5rem] leading-[3.5rem] rounded-3xl pl-[2.7rem] text-[1.3rem] "
-            rows={1}
-            style={{ minHeight: "40px" }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        {/* Footer */}
+        {/* No friend */}
+        {requestState === "noFriend" && (
+          <div>
+            If you want chatting with {receiverName} then first you need to send
+            request
+            <button onClick={sendRequest}>Send Request</button>
+          </div>
+        )}{" "}
+        {/* Sending request */}
+        {requestState === "sent" && (
+          <div>
+            {messages.map((msg, index) => {
+              {
+                msg.sender === userId ? (
+                  <div>You sent friendrequest to {receiverName}</div>
+                ) : (
+                  <div>
+                    <div>{receiverName} sent friendrequest to you</div>
+                    <div className="flex px-5 py-3 text-4xl">
+                      <button
+                        onClick={() => {
+                          replyRequest((accept = 1));
+                        }}>
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => {
+                          replyRequest((accept = 0));
+                        }}>
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                );
               }
-            }}
-          />
-          <button
-            onClick={sendMessage}
-            className="p-1 rounded-full hover:bg-gray-200 transition">
-            <FiSend size={30} />
-          </button>
-        </div>
-      </div>{" "}
+            })}
+          </div>
+        )}
+        {/* Rejection code */}
+        {requestState === "reject" && (
+          <div>
+            {messages.map((msg, index) => {
+              {
+                msg.sender === userId ? (
+                  <div>
+                    {" "}
+                    <div>You rejected friendrequest of {receiverName}</div>
+                    <div>
+                      If you want chatting with {receiverName} then first you
+                      need to send request
+                      <button onClick={sendRequest}>Send Request</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>{receiverName} rejected your friendrequest</div>
+                );
+              }
+            })}
+          </div>
+        )}
+        {/* Friend */}
+        {/* Type bar for sending sms*/}
+        {requestState === "friend" && (
+          <div className="relative flex items-center h-[4rem]">
+            {file && (
+              <div className="flex items-center p-2 bg-gray-100 rounded-lg mb-2">
+                <img
+                  src={filePreview}
+                  alt="Preview"
+                  className="w-12 h-12 object-cover rounded-lg"
+                />
+                <span className="truncate">{file.name}</span>
+                <button
+                  onClick={() => {
+                    setFile(null);
+                    setFilePreview(null);
+                  }}
+                  className="ml-2">
+                  <FiX size={20} className="text-gray-600 hover:text-red-500" />
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute pl-[0.7rem] rounded-full hover:bg-gray-200 transition">
+              <FiPaperclip size={20} />
+            </button>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <textarea
+              ref={messageInputRef}
+              value={message}
+              onChange={handleChange}
+              placeholder="Type a message..."
+              className="bg-slate-200 w-full h-[3.5rem] leading-[3.5rem] rounded-3xl pl-[2.7rem] text-[1.3rem] "
+              rows={1}
+              style={{ minHeight: "40px" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              className="p-1 rounded-full hover:bg-gray-200 transition">
+              <FiSend size={30} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

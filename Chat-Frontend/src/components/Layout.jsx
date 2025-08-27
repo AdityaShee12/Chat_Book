@@ -1,29 +1,30 @@
 import { useState } from "react";
 import {
   AiOutlineMessage,
+  AiOutlinePhone,
+  AiOutlineEye,
   AiOutlineSetting,
   AiOutlineUser,
 } from "react-icons/ai";
 import { FaCamera, FaPen } from "react-icons/fa";
-import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import Search from "../services/searchServices.jsx"; // Import Search component
+import { useNavigate, Outlet } from "react-router-dom";
+import Search from "../services/searchServices.jsx";
+import { SiOpenai } from "react-icons/si";
 import { useEffect, useRef } from "react";
 import axios from "axios";
 import Zoom from "react-medium-image-zoom";
+import StatusUpload from "../services/statusUpload.jsx";
+import AiAssistant from "../services/AiAssistant.jsx";
+import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const Layout = () => {
-  const location = useLocation();
-  const name = location.state?.userName;
-  const userId = location.state?.userId;
-  const [dp, setDp] = useState();
-  const [about, setAbout] = useState();
   const [email, setEmail] = useState();
   const [searchbarWidth, setSearchbarWidth] = useState(30); // Sidebar width in percentage
   const [showFullImage, setShowFullImage] = useState(false);
   const contextRef = useRef(null);
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedAbout, setEditedAbout] = useState(about);
   const [originalY, setOriginalY] = useState(null);
   const [fullName, setFullName] = useState("");
   const [dragStyle, setDragStyle] = useState("");
@@ -34,7 +35,14 @@ const Layout = () => {
     x: 0,
     y: 0,
   });
+  const { userId, userName, userAvatar, userAbout } = useSelector(
+    (state) => state.user
+  );
   const [menuAnimation, setMenuAnimation] = useState(false);
+  const [statusClick, setStatusClick] = useState(false);
+  const dispatch = useDispatch();
+  const [editedAbout, setEditedAbout] = useState(userAbout);
+  console.log("User", userId);
 
   // useeffect for contextMenu
   useEffect(() => {
@@ -115,29 +123,7 @@ const Layout = () => {
     });
   };
 
-  // show profile
-  useEffect(() => {
-    const profile = async () => {
-      setTimeout(async () => {
-        try {
-          const response = await axios.get(
-            `/api/v1/users/profile?userId=${userId}`
-          );
-          console.log("Res", response);
-
-          setFullName(response.data.data.fullName);
-          setDp(response.data.data.avatar);
-          setAbout(response.data.data.about);
-          setEmail(response.data.data.email);
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-        }
-      }, 100);
-    };
-    profile();
-  }, [dp, about, email]);
-
-  // Update profile pic
+  // Update proiflepic section
   const handleProfilePicChange = async (e) => {
     const file = e.target.files?.[0] || null;
     const formData = new FormData();
@@ -153,7 +139,7 @@ const Layout = () => {
         }
       );
       const updated = response.data.data;
-      setDp(updated.avatar);
+      dispatch(setUserAvatar({ userAvatar: updated.avatar }));
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -173,7 +159,7 @@ const Layout = () => {
         }
       );
       const updated = response.data.data;
-      setAbout(updated.about);
+      dispatch(setUserAbout({ userAbout: updated.about }));
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -183,12 +169,13 @@ const Layout = () => {
   const handleLogout = async () => {
     const response = await axios.post(
       "/api/v1/users/logout",
-      {},
+      { userId },
       {
         withCredentials: true,
       }
     );
-    navigate("/sign_in");
+    navigate("/sign_in")
+    dispatch(clearUser());
     return response.data;
   };
 
@@ -197,11 +184,20 @@ const Layout = () => {
     navigate("/layout/AiAssistant");
   };
 
+  // Status upload system
+  const statusUploaed = () => {
+    setStatusClick(true);
+  };
+
+  const chat = () => {
+    setStatusClick(false);
+  };
+
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${dragStyle}`}>
       {/* Header no hand */}
       <h2 className="font-mono text-[1.5rem] pt-[0.3rem] pl-[0.9rem] xl:pl-[0.7rem] bg-slate-200">
-        ChatBook
+        {statusClick ? <span>Status</span> : <span>ChatBook</span>}
       </h2>
       {/* Main Content (Sidebar + Search Section + outlet) */}
       <div className="lg:flex flex-1">
@@ -210,9 +206,19 @@ const Layout = () => {
           {/* Upper Icons (3 icons) */}
           <div className="flex flex-col justify-between items-center gap-[1.5rem]">
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => chat()}
               className="p-2 rounded-full hover:bg-gray-200">
               <AiOutlineMessage size={24} />
+            </button>
+            <button
+              onClick={() => AiAssistant()}
+              className="p-2 rounded-full hover:bg-gray-200">
+              <SiOpenai size={24} />
+            </button>
+            <button
+              onClick={() => statusUploaed()}
+              className="p-2 rounded-full hover:bg-gray-200">
+              <AiOutlineEye size={24} />
             </button>
           </div>
           {/* Bottom Icons (2 icons) */}
@@ -246,7 +252,7 @@ const Layout = () => {
                     <div className="relative w-24 h-24">
                       <Zoom>
                         <img
-                          src={dp}
+                          src={userAvatar}
                           alt="Profile"
                           className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
                           onClick={() => setShowFullImage(true)}
@@ -261,7 +267,7 @@ const Layout = () => {
                         />
                       </label>
                     </div>
-                    <p className="mt-3 font-medium text-sm">{fullName}</p>
+                    <p className="mt-3 font-medium text-sm">{userName}</p>
                   </div>
 
                   <div className="w-full mt-3 relative">
@@ -285,12 +291,12 @@ const Layout = () => {
                     ) : (
                       <div className="flex justify-between items-center w-full">
                         <p className="text-sm text-gray-800">
-                          {about || "No about info"}
+                          {userAbout || "No about info"}
                         </p>
                         <FaPen
                           className="text-blue-500 text-xs cursor-pointer ml-2"
                           onClick={() => {
-                            setEditedAbout(about);
+                            setEditedAbout(userAbout);
                             setIsEditing(true);
                           }}
                         />
@@ -313,7 +319,7 @@ const Layout = () => {
                 className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999]"
                 onClick={() => setShowFullImage(false)}>
                 <img
-                  src={dp}
+                  src={userAvatar}
                   alt="Full Profile"
                   className="max-w-full max-h-full object-contain rounded-none"
                 />
@@ -321,19 +327,33 @@ const Layout = () => {
             )}
           </div>
         </div>
-        {/* Resizable Searchbar */}
-        <div
-          style={{
-            width: windowWidth < 1024 ? "100%" : `${searchbarWidth - 3.5}%`,
-          }}>
-          <Search userId={userId} userName={name} />
-        </div>
+        {/* Searchbar and status upload and show  */}
+        {statusClick ? (
+          userId ? (
+            <div
+              style={{
+                width: windowWidth < 1024 ? "100%" : `${searchbarWidth - 3.5}%`,
+              }}>
+              <StatusUpload />
+            </div>
+          ) : (
+            <div>Loading...</div>
+          )
+        ) : (
+          <div
+            style={{
+              width: windowWidth < 1024 ? "100%" : `${searchbarWidth - 3.5}%`,
+            }}>
+            <Search />
+          </div>
+        )}
+
         {/* Draggable Resizer */}
         <div
           className={`hidden lg:block w-[0.1rem] bg-slate-400 cursor-ew-resize hover:w-[1rem] ${barStyle}`}
           onMouseDown={handleMouseDown}></div>
         {/* Right Content (ChatPage via Outlet) */}
-        <div className="w-full cursor-pointer">
+        <div className="w-full">
           <Outlet />
         </div>
       </div>
