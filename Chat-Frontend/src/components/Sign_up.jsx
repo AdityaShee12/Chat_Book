@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/userService";
+import { API } from "../Backend_API";
 
 const Sign_up = () => {
   const [profilepic, setProfilepic] = useState(false);
