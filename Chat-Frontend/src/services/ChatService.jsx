@@ -10,7 +10,7 @@ import axios from "axios";
 import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useSelector } from "react-redux";
-import { API } from "../Backend_API.js";
+import { Socket } from "socket.io-client";
 
 const configuration = {
   iceServers: [
@@ -185,25 +185,31 @@ const ChatPage = () => {
       let fileName = null;
       let fileType = null;
       let user;
-      if (relation === "sent") {
-        console.log("work");
+      console.log("SI", sender, sender.id);
 
+      if (relation === "sent") {
         if (sender.id === userId) {
-          sms = "You sent friendrequest to " + receiverName;
+          user = "You";
+          sms = "You sent friend request to " + receiverName;
         } else {
-          sms = receiverName + "sent friendrequest to you";
+          user = "Sender";
+          sms = receiverName + "sent friend request to you";
         }
       } else if (relation === "accept") {
         if (sender.id === userId) {
-          sms = "You accepted friendrequest of " + receiverName;
+          user = "You";
+          sms = "You accepted friend request of " + receiverName;
         } else {
-          sms = receiverName + "accepted your friendrequest";
+          user = "Sender";
+          sms = receiverName + "accepted your friend request";
         }
       } else if (relation === "reject") {
         if (sender.id === userId) {
-          sms = "You rejected friendrequest of " + receiverName;
+          user = "You";
+          sms = "You rejected friend request of " + receiverName;
         } else {
-          sms = receiverName + "rejected your friendrequest";
+          user = "Sender";
+          sms = receiverName + "rejected your friend request";
         }
       } else {
         if (text) {
@@ -212,7 +218,7 @@ const ChatPage = () => {
         if (sender.id === userId) {
           user = "You";
         } else {
-          user = "receiver";
+          user = "Sender";
         }
 
         if (file && file.fileData && file.fileType) {
@@ -269,6 +275,7 @@ const ChatPage = () => {
     return () => {
       socket.off("state");
       socket.off("receive message");
+      socket.off("storedSendersms");
     };
   }, []);
 
@@ -713,7 +720,7 @@ const ChatPage = () => {
       console.log("receiverProfile", receiverId, receiverName, receiverAvatar);
       try {
         const response = await axios.get(
-          `${API}/api/v1/users/profile?userId=${receiverId}`
+          `/api/v1/users/profile?userId=${receiverId}`
         );
         console.log("Res", response);
         setAbout(response.data.data.about);
@@ -780,19 +787,30 @@ const ChatPage = () => {
     }
   };
 
-  // Code for checking friend or not
-  socket.on("friends", (data) => {
-    const { requestState } = data;
-    if (requestState === "reject") {
-      setRequestState("reject");
-    } else if (requestState === "sent") {
-      setRequestState("sent");
-    } else if (requestState === "friend") {
-      setRequestState("friend");
-    } else {
-      setRequestState("noFriend");
-    }
-  });
+  useEffect(() => {
+    socket.on("friends", (data) => {
+      const { requestState } = data;
+      console.log(requestState);
+      setTimeout(() => {
+        if (requestState === "reject") {
+          setRequestState("reject");
+        } else if (requestState === "sent") {
+          setRequestState("sent");
+        } else if (requestState === "friend") {
+          setRequestState("friend");
+        } else {
+          setRequestState("noFriend");
+        }
+      }, 100);
+    });
+    return () => {
+      socket.off("friends");
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log("REQS", requestState);
+  }, [requestState]);
 
   // Code for sending request
   const sendRequest = () => {
@@ -806,8 +824,6 @@ const ChatPage = () => {
       receiverAvatar,
       identifier,
     });
-    console.log("Rec", receiverName);
-
     setMessages((prev) => [
       ...prev,
       {
@@ -816,6 +832,7 @@ const ChatPage = () => {
         message: "You sent friendrequest to " + receiverName,
       },
     ]);
+    setRequestState("sent");
   };
 
   //  Code for accept or reject requests
@@ -1229,31 +1246,31 @@ const ChatPage = () => {
         {/* Sending request */}
         {requestState === "sent" && (
           <div>
-            {messages.map((msg, index) => {
-              {
-                msg.sender === userId ? (
-                  <div>You sent friendrequest to {receiverName}</div>
-                ) : (
-                  <div>
-                    <div>{receiverName} sent friendrequest to you</div>
-                    <div className="flex px-5 py-3 text-4xl">
-                      <button
-                        onClick={() => {
-                          replyRequest((accept = 1));
-                        }}>
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => {
-                          replyRequest((accept = 0));
-                        }}>
-                        Reject
-                      </button>
-                    </div>
+            {messages.map((msg, index) =>
+              msg.sender === "You" ? (
+                <div key={index}>You sent friendrequest to {receiverName}</div>
+              ) : (
+                <div key={index}>
+                  <div>{receiverName} sent friendrequest to you</div>
+                  <div className="flex px-5 py-3 text-4xl">
+                    <button
+                      onClick={() => {
+                        const accept = 1;
+                        replyRequest(accept);
+                      }}>
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => {
+                        const accept = 0;
+                        replyRequest(accept);
+                      }}>
+                      Reject
+                    </button>
                   </div>
-                );
-              }
-            })}
+                </div>
+              )
+            )}
           </div>
         )}
         {/* Rejection code */}
@@ -1261,7 +1278,7 @@ const ChatPage = () => {
           <div>
             {messages.map((msg, index) => {
               {
-                msg.sender === userId ? (
+                msg.sender === "You" ? (
                   <div>
                     {" "}
                     <div>You rejected friendrequest of {receiverName}</div>
