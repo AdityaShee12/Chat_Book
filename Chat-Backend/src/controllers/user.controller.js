@@ -351,6 +351,18 @@ const userList = asyncHandler(async (req, res) => {
   }
 });
 
+const setPassword = asyncHandler(async (req, res) => {
+  const { password, email } = req.body;
+  const user = await User.findOneAndUpdate(
+    { email: email },
+    { $set: { password: password } },
+    { new: true, select: "_id fullName avatar about" } // updated document return
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Password was change"));
+});
+
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
@@ -405,6 +417,7 @@ export {
   loginUser,
   logoutUser,
   profile,
+  setPassword,
   profilePicChange,
   profileAboutChange,
   searchUser,

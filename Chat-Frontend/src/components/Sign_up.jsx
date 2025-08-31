@@ -2,7 +2,13 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/userService";
-import { API } from "../Backend_API";
+import {
+  setUserId,
+  setUserName,
+  setUserAvatar,
+  setUserAbout,
+} from "../features/userSlice";
+import { useDispatch } from "react-redux";
 
 const Sign_up = () => {
   const [profilepic, setProfilepic] = useState(false);
@@ -14,11 +20,12 @@ const Sign_up = () => {
   const [otpVerified, setotpVerified] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
+  const [userName, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [about, setAbout] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // OAuth login
   const login = () => {
@@ -28,7 +35,7 @@ const Sign_up = () => {
   // send OTP
   const sendOtp = async () => {
     try {
-      const response = await axios.post(`${API}/api/v1/users/otp`, { email });
+      const response = await axios.post("/api/v1/users/otp", { email });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);
@@ -61,8 +68,15 @@ const Sign_up = () => {
 
   // Choose Avatar
   const chooseAvatar = () => {
-    setCreateAccount(false);
-    setProfilepic(true);
+    const regex = /^[a-z0-9._]+$/;
+    if (!regex.test(userName)) {
+      alert(
+        "Username must contain only lowercase letters, numbers, dot, underscore."
+      );
+    } else {
+      setCreateAccount(false);
+      setProfilepic(true);
+    }
   };
 
   // Handling registration
@@ -71,7 +85,7 @@ const Sign_up = () => {
 
     const formData = new FormData();
     formData.append("fullName", fullName);
-    formData.append("username", username);
+    formData.append("userName", userName);
     formData.append("email", email);
     formData.append("password", password);
     formData.append("about", about);
@@ -81,9 +95,11 @@ const Sign_up = () => {
       console.log(email);
       const response = await registerUser(formData);
       console.log(response);
-      const userName = response.data.fullName;
-      const userId = response.data._id;
-      navigate("/layout", { state: { userId, userName } });
+      dispatch(setUserId({ userId: response.data._id }));
+      dispatch(setUserName({ userName: response.data.fullName }));
+      dispatch(setUserAvatar({ userAvatar: response.data.avatar }));
+      dispatch(setUserAbout({ userAbout: response.data.about }));
+      navigate("/layout");
     } catch (error) {
       console.log(error);
     }
@@ -159,10 +175,8 @@ const Sign_up = () => {
             <input
               type="text"
               placeholder="Username"
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-              }}
+              value={userName}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
             />
             <input
