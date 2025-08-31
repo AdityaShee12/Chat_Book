@@ -50,7 +50,7 @@ const Sign_in = () => {
   };
 
   const sendOTP = async () => {
-    const response = await axios.post("/api/v1/users/otp", { email });
+    const response = await axios.post(`${API}/api/v1/users/otp`, { email });
     setChangePassword(false);
     setOtpVerified(true);
     setVerifyOtp(response.data.data.otp);
@@ -67,7 +67,7 @@ const Sign_in = () => {
 
   const passwordMaking = async () => {
     try {
-      const response = await axios.post("/api/v1/users/passwordChange", {
+      const response = await axios.post(`${API}/api/v1/users/passwordChange`, {
         password,
         email,
       });
