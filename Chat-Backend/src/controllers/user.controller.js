@@ -7,6 +7,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import { transporter } from "../sendOTP.js";
 import { v4 as uuidv4 } from "uuid";
+import { Status } from "../models/Status.model.js";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -29,12 +30,13 @@ const generateAccessAndRefereshTokens = async (userId) => {
 const sendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
   console.log(email);
+
   if (!email) return res.status(400).json({ message: "Email is required!" });
   const generateOTP = () =>
     Math.floor(100000 + Math.random() * 900000).toString();
   const otp = generateOTP();
   const mailOptions = {
-    from: `"A Tech" <${process.env.EMAIL_USER}>`,
+    from: `"Chat Book" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Your OTP Code",
     text: `Your OTP is ${otp}.`,
@@ -45,21 +47,22 @@ const sendOtp = asyncHandler(async (req, res) => {
     otp,
     email,
   };
+  console.log("✅ Response Data:", responseData); // Debugging
   return res
     .status(201)
     .json(new ApiResponse(200, responseData, "Send otp successfully"));
 });
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, email, username, password, about } = req.body;
+  const { fullName, email, userName, password, about } = req.body;
   if (
-    [fullName, email, username, password].some((field) => field?.trim() === "")
+    [fullName, email, userName, password].some((field) => field?.trim() === "")
   ) {
     throw new ApiError(400, "All fields are required");
   }
 
   const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ userName }, { email }],
   });
 
   if (existedUser) {
@@ -78,7 +81,7 @@ const registerUser = asyncHandler(async (req, res) => {
     avatar: avatar?.url || "",
     about,
     password,
-    username: username.toLowerCase(),
+    userName: userName.toLowerCase(),
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -107,12 +110,12 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, fullName, password } = req.body;
-  if (!fullName && !email) {
+  const { email, userName, password } = req.body;
+  if (!userName && !email) {
     throw new ApiError(400, "username or email is required");
   }
   const user = await User.findOne({
-    $or: [{ fullName }, { email }],
+    $or: [{ userName }, { email }],
   });
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -152,9 +155,65 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
+const statusUpload = asyncHandler(async (req, res) => {
+  const uploader = req.body.userId;
+
+  const statusLocalPath = req.files?.status[0]?.path;
+
+  const status = await uploadOnCloudinary(statusLocalPath);
+
+  const newStatus = await Status.create({
+    uploader: { id: uploader },
+    status: [{ file: status?.url || "" }],
+  });
+
+  const update = await Status.findById(newStatus._id);
+  if (!update)
+    throw new ApiError(500, "Something went wrong while user upload status");
+
+  return res
+    .status(201)
+    .json(new ApiResponse(200, update, "User upload status successfully"));
+});
+
+const statusShow = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+
+  // main user
+  const user = await User.findById(userId).select("-password -refreshToken");
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
+  }
+
+  // protita friend er data fetch
+  const friendsData = await Promise.all(
+    user.friends.map(async (friend) => {
+      const friendStatus = await Status.findOne({ "uploader.id": friend.id });
+      return friendStatus;
+    })
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, friendsData, "Every friend's status"));
+});
+
+const setPassword = asyncHandler(async (req, res) => {
+  const { password, email } = req.body;
+  const user = await User.findOneAndUpdate(
+    { email: email },
+    { $set: { password: password } },
+    { new: true, select: "_id fullName avatar about" } // updated document return
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Password was change"));
+});
+
 const logoutUser = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
   await User.findByIdAndUpdate(
-    req.user._id,
+    userId,
     {
       $unset: {
         refreshToken: 1, // this removes the field from document
@@ -177,31 +236,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-const profile = asyncHandler(async (req, res) => {
-  const { userId } = req.query;
-
-  if (!userId) return res.json([]);
-  const profileData = await User.findById(userId).select(
-    "-password -refreshToken"
-  );
-  if (!profileData) {
-    throw new ApiError(500, "Something went wrong while registering the user");
-  }
-  console.log(profileData);
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, profileData, "User fetched Successfully"));
-});
-
 const profilePicChange = asyncHandler(async (req, res) => {
   const { userId } = req.body;
-
   if (!userId) return res.status(400).json({ message: "User ID missing" });
-
   const profileData = await User.findById(userId);
   if (!profileData) throw new ApiError(404, "User not found");
-
   // If avatar provided, upload it
   const avatarLocalPath = req.file?.path;
   if (avatarLocalPath) {
@@ -233,6 +272,7 @@ const profileAboutChange = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, profileData, "Profile updated successfully"));
 });
 
+// It is handle fetching users those names are metch with searching query
 const searchUser = asyncHandler(async (req, res) => {
   try {
     const { query, userId } = req.query;
@@ -245,13 +285,12 @@ const searchUser = asyncHandler(async (req, res) => {
     let userData = [];
 
     if (users.length > 0) {
-      let userIds = users.map((user) => user._id.toString());
+      let userIds = users.map((user) => user._id);
       const chatRooms = await Message.find({
         "users.id": userId,
-        "messages.0": { $exists: true },
         "users.id": { $in: userIds },
+        "messages.0": { $exists: true },
       }).sort({ "messages.timestamp": -1 });
-
       let processedUserIds = new Set();
 
       chatRooms.forEach((chat) => {
@@ -262,10 +301,10 @@ const searchUser = asyncHandler(async (req, res) => {
           ) {
             processedUserIds.add(user.id.toString());
 
-            const lastMessage = chat.messages[chat.messages.length - 1]; // সর্বশেষ মেসেজ
+            const lastMessage = chat.messages[chat.messages.length - 1];
             userData.push({
               _id: user.id,
-              fullName: user.fullName,
+              fullName: user.name,
               avatar: user.avatar || "",
               lastMessage: {
                 text: lastMessage?.text || null,
@@ -280,135 +319,111 @@ const searchUser = asyncHandler(async (req, res) => {
         if (!processedUserIds.has(user._id.toString())) {
           userData.push({
             _id: user._id,
-            fullName: user.fullName,
+            fullName: user.name,
             avatar: user.avatar || "",
           });
         }
       });
     }
+    console.log("UD", users);
 
-    console.log("US", userData);
     res.json(userData);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// It is fetch all previous users those was chatting with user
 const userList = asyncHandler(async (req, res) => {
   try {
     const { userId } = req.query;
-
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
     }
-
-    // Find chats where userId is in users array and message exists
     const chatRooms = await Message.find({
       "users.id": userId,
       "messages.0": { $exists: true },
     }).sort({ "messages.timestamp": -1 });
-
     let userData = [];
-
     if (chatRooms.length > 0) {
-      let userIds = new Set();
-
       chatRooms.forEach((chat) => {
         chat.users.forEach((user) => {
           if (user.id.toString() !== userId) {
-            userIds.add(user.id.toString());
+            const lastMessage = chat.messages[chat.messages.length - 1];
+            let chatter;
+            if (user.id === lastMessage.sender.id) {
+              chatter = "reciever";
+            } else {
+              chatter = "sender";
+            }
+            userData.push({
+              _id: user.id,
+              fullName: user.name,
+              avatar: user.avatar || "",
+              lastMessage: {
+                text: lastMessage?.text || null,
+                file: lastMessage?.file || null,
+                chatter,
+                timestamp: lastMessage?.timestamp || null,
+              },
+            });
           }
         });
       });
-
-      const users = await User.find({ _id: { $in: [...userIds] } });
-
-      users.forEach((user) => {
-        const chat = chatRooms.find((c) =>
-          c.users.some((u) => u.id.toString() === user._id.toString())
-        );
-
-        if (chat) {
-          const lastMessage = chat.messages[chat.messages.length - 1]; // Get last message
-          userData.push({
-            _id: user._id,
-            fullName: user.fullName,
-            avatar: user.avatar || "",
-            lastMessage: {
-              text: lastMessage?.text || null,
-              file: lastMessage?.file || null,
-              timestamp: lastMessage?.timestamp || null,
-            },
-          });
-        }
-      });
     }
-    console.log("UD", userData);
-
     res.json(userData);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
-});
-
-const setPassword = asyncHandler(async (req, res) => {
-  const { password, email } = req.body;
-  const user = await User.findOneAndUpdate(
-    { email: email },
-    { $set: { password: password } },
-    { new: true, select: "_id fullName avatar about" } // updated document return
-  );
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Password was change"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
-
-  if (!incomingRefreshToken) {
-    throw new ApiError(401, "unauthorized request");
-  }
+  if (incomingRefreshToken) console.log(incomingRefreshToken);
+  else throw new ApiError("Did not find refreshtoken ");
+  console.log("Work", incomingRefreshToken);
 
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-
     const user = await User.findById(decodedToken?._id);
-
     if (!user) {
       throw new ApiError(401, "Invalid refresh token");
     }
-
     if (incomingRefreshToken !== user?.refreshToken) {
       throw new ApiError(401, "Refresh token is expired or used");
     }
-
-    const options = {
-      httpOnly: true,
-      secure: true,
-    };
-
-    const { accessToken, newRefreshToken } =
-      await generateAccessAndRefereshTokens(user._id);
-
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          { accessToken, refreshToken: newRefreshToken },
-          "Access token refreshed"
-        )
-      );
+      .json(new ApiResponse(200, user, "Access token refreshed"));
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid refresh token");
   }
+});
+
+const generative_ai = asyncHandler(async (req, res) => {
+  const { messages } = req.body;
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: "Messages history required" });
+  }
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const chat = ai
+    .getGenerativeModel({ model: "models/gemini-1.5-pro" })
+    .startChat({
+      history: formattedMessages,
+      generationConfig: {
+        temperature: 0.7,
+      },
+    });
+
+  const result = await chat.sendMessage("Tar somporke kichu bolo");
+  const reply = result.response.candidates[0].content.parts[0].text;
+
+  res.status(200).json(new ApiResponse(200, reply, "AI response generated"));
 });
 
 export {
@@ -416,11 +431,14 @@ export {
   sendOtp,
   loginUser,
   logoutUser,
-  profile,
+  // profile,
   setPassword,
   profilePicChange,
   profileAboutChange,
   searchUser,
   userList,
+  statusUpload,
+  statusShow,
   refreshAccessToken,
+  generative_ai,
 };
