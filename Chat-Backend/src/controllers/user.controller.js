@@ -404,34 +404,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-const generative_ai = asyncHandler(async (req, res) => {
-  const { messages } = req.body;
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: "Messages history required" });
-  }
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-  const chat = ai
-    .getGenerativeModel({ model: "models/gemini-1.5-pro" })
-    .startChat({
-      history: formattedMessages,
-      generationConfig: {
-        temperature: 0.7,
-      },
-    });
-
-  const result = await chat.sendMessage("Tar somporke kichu bolo");
-  const reply = result.response.candidates[0].content.parts[0].text;
-
-  res.status(200).json(new ApiResponse(200, reply, "AI response generated"));
-});
-
 export {
   registerUser,
   sendOtp,
   loginUser,
   logoutUser,
-  // profile,
   setPassword,
   profilePicChange,
   profileAboutChange,
@@ -440,5 +417,4 @@ export {
   statusUpload,
   statusShow,
   refreshAccessToken,
-  generative_ai,
 };

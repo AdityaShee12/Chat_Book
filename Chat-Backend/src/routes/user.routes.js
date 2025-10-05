@@ -5,7 +5,7 @@ import {
   loginUser,
   logoutUser,
   searchUser,
-  profile,setPassword,
+  setPassword,
   profilePicChange,
   profileAboutChange,
   userList,
@@ -33,7 +33,6 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 router.route("/passwordChange").post(setPassword);
 router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/profile").get(profile);
 router.post("/profilePicChange", upload.single("avatar"), profilePicChange);
 router.post("/profileAboutChange", profileAboutChange);
 router.route("/searchUser").get(searchUser);
