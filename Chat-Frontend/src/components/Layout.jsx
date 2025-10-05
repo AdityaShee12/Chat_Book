@@ -212,11 +212,6 @@ const Layout = () => {
               <AiOutlineMessage size={24} />
             </button>
             <button
-              onClick={() => AiAssistant()}
-              className="p-2 rounded-full hover:bg-gray-200">
-              <SiOpenai size={24} />
-            </button>
-            <button
               onClick={() => statusUploaed()}
               className="p-2 rounded-full hover:bg-gray-200">
               <AiOutlineEye size={24} />
