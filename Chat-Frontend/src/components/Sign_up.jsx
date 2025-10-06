@@ -9,6 +9,7 @@ import {
   setUserAbout,
 } from "../features/userSlice";
 import { useDispatch } from "react-redux";
+import { API } from "../Backend_API";
 
 const Sign_up = () => {
   const [profilepic, setProfilepic] = useState(false);
@@ -29,13 +30,13 @@ const Sign_up = () => {
 
   // OAuth login
   const login = () => {
-    window.open("http://localhost:8000/auth/google", "_self");
+    window.open(`${API}/auth/google`, "_self");
   };
 
   // send OTP
   const sendOtp = async () => {
     try {
-      const response = await axios.post("/api/v1/users/otp", { email });
+      const response = await axios.post(`${API}/api/v1/users/otp`, { email });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);

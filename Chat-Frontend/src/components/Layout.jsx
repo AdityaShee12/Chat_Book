@@ -175,9 +175,9 @@ const Layout = () => {
         withCredentials: true,
       }
     );
-    navigate("/sign_in")
+    console.log("LogOut", response.data);
+    navigate("/sign_in");
     dispatch(clearUser());
-    return response.data;
   };
 
   // Ai implementation
