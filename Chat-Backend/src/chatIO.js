@@ -8,29 +8,17 @@ import { Message } from "./models/Message.models.js";
 import { Notification } from "./models/notification.models.js";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
+import { API } from "./Frontend_API.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new socketio(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: API,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
-
-// Redis Connection with Error Handling
-// const redisClient = createClient({
-//   url: "redis://127.0.0.1:6379",
-// });
-
-// redisClient.on("error", (err) => console.log("Redis Error:", err));
-
-// try {
-//   await redisClient.connect();
-//   console.log("Redis Connected Successfully");
-// } catch (error) {
-//   console.error("Redis Connection Failed:", error);
-// }
 
 let users = {};
 
@@ -58,24 +46,6 @@ io.on("connection", (socket) => {
       users[userId] = { id: userId, name: userName, socketId: socket.id };
     }
     console.log("user joined", users);
-
-    // const notifications = await Notification.find({ "receiver.id": userId });
-    // if (notifications) {
-    //   if (notifications.length > 0) {
-    //     notifications.forEach((notification) => {
-    //       if (notification.messages.length > 0) {
-    //         const lastMessage =
-    //           notification.messages[notification.messages.length - 1];
-    //         lastMessage;
-    //         const senderId = notification.sender.id;
-    //         io.to(userId).emit("last message", {
-    //           userId: senderId,
-    //           sms: lastMessage.text,
-    //         });
-    //       }
-    //     });
-    //   }
-    // }
   });
 
   socket.on(
@@ -158,61 +128,6 @@ io.on("connection", (socket) => {
       } catch (error) {
         console.error("Socket Error:", error);
       }
-      // console.log('notification',userId,receiverId);
-
-      // const notifications = await Notification.findOneAndDelete({
-      //   "sender.id": receiverId,
-      //   "receiver.id": userId,
-      // });
-      // if (notifications) {
-      //   if (notifications.messages.length > 0) {
-      //     for (const message of notifications.messages) {
-      //       // 1. Socket e message pathano
-      //       io.to(userId).emit("receive message", {
-      //         identifier: message.identifier,
-      //         fileName: message.file?.fileName || null,
-      //         fileType: message.file?.fileType || null,
-      //         fileData: message.file?.fileData || null,
-      //         sms: message.text,
-      //       });
-
-      //       // 2. Message database e save kora
-      //       const messageData = {
-      //         sender: { id: receiverId }, // sender hocche ToId
-      //         reciever: { id: userId }, // receiver hocche OwnId
-      //         identifier: message.identifier,
-      //         text: message.text,
-      //         sender_delete: false,
-      //         reciever_delete: false,
-      //         file: {
-      //           fileName: message.file?.fileName || null,
-      //           fileType: message.file?.fileType || null,
-      //           fileData: message.file?.fileData || null,
-      //         },
-      //         timestamp: Date.now(),
-      //       };
-      //       // Existing message thread ase kina check
-      //       let existingChat = await Message.findOne({
-      //         "users.id": { $all: [receiverId, userId] },
-      //       });
-
-      //       if (existingChat) {
-      //         existingChat.messages.push(messageData);
-      //         await existingChat.save();
-      //       } else {
-      //         const newChat = new Message({
-      //           users: [
-      //             { id: receiverId, name: receiverName },
-      //             { id: userId, name: userName },
-      //           ],
-      //           messages: [messageData],
-      //         });
-      //         await newChat.save();
-      //       }
-      //     }
-      //   }
-      // }
-      // console.log("users3", users);
     }
   );
 
@@ -458,8 +373,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("offline_User sms", async (data) => {
-    console.log("sendt");
-
     const {
       OwnId,
       OwnName,
