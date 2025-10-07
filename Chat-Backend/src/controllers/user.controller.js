@@ -41,16 +41,20 @@ const sendOtp = asyncHandler(async (req, res) => {
     subject: "Your OTP Code",
     text: `Your OTP is ${otp}.`,
   };
-  transporter.sendMail(mailOptions);
-  const responseData = {
-    message: `OTP sent successfully to ${email}`,
-    otp,
-    email,
-  };
-  console.log("✅ Response Data:", responseData); // Debugging
-  return res
-    .status(201)
-    .json(new ApiResponse(200, responseData, "Send otp successfully"));
+  try {
+    await transporter.sendMail(mailOptions);
+    const responseData = {
+      message: `OTP sent successfully to ${email}`,
+      otp,
+      email,
+    };
+    console.log("✅ Response Data:", responseData); // Debugging
+    return res
+      .status(201)
+      .json(new ApiResponse(200, responseData, "Send otp successfully"));
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 const registerUser = asyncHandler(async (req, res) => {
