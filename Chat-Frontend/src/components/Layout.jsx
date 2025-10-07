@@ -43,7 +43,6 @@ const Layout = () => {
   const [statusClick, setStatusClick] = useState(false);
   const dispatch = useDispatch();
   const [editedAbout, setEditedAbout] = useState(userAbout);
-  console.log("User", userId);
 
   // useeffect for contextMenu
   useEffect(() => {
@@ -175,14 +174,8 @@ const Layout = () => {
         withCredentials: true,
       }
     );
-    console.log("LogOut", response.data);
     navigate("/sign_in");
     dispatch(clearUser());
-  };
-
-  // Ai implementation
-  const AiAssistant = async () => {
-    navigate("/layout/AiAssistant");
   };
 
   // Status upload system

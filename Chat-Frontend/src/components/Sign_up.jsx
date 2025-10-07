@@ -236,9 +236,11 @@ const Sign_up = () => {
       )}
       <p className="text-center text-gray-600 m-7 border border-slate-400 rounded-md md:w-[34rem] md:text-[2rem] lg:text-[1.4rem] lg:w-[30rem] xl:text-[1rem] xl:w-[26rem] h-auto p-4 ">
         Already have an account?{" "}
-        <a href="/sign_in" className="text-blue-500 hover:underline">
+        <div
+          className="inline-block text-blue-500 hover:text-blue-600 relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
+          onClick={signIn}>
           Login here
-        </a>
+        </div>
       </p>
     </div>
   );

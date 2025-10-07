@@ -200,10 +200,12 @@ const Sign_in = () => {
       </div>
       <div className="max-w-xs sm:max-w-sm md:max-w-md w-full p-4 rounded-xl flex items-center justify-center border border-gray-300 text-gray-700 text-center">
         Don't have an account?
-        <a href="/sign_up" className="ml-1 text-blue-500 hover:underline">
+        <div
+          className="inline-block text-blue-500 hover:text-blue-600 relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
+          onClick={() => navigate("/sign_up")}>
           {" "}
           Sign up
-        </a>
+        </div>
       </div>
     </div>
   );
