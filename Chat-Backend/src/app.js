@@ -8,7 +8,13 @@ import "./OAuth20.js";
 import { API } from "./Frontend_API.js";
 
 const app = express();
-
+app.use(
+  cors({
+    origin: "https://real-time-chat-application-eta.vercel.app", // তোমার frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // যদি cookie/token পাঠাও
+  })
+);
 // Middleware Setup
 app.use(cors({ origin: API, credentials: true }));
 app.use(express.json());
@@ -16,9 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.get("/",(req,res)=>{
-    res.send("API is running successfully")
-})
+app.get("/", (req, res) => {
+  res.send("API is running successfully");
+});
 app.use("/api/v1/users", userRouter);
 app.use("/auth", authRoutes);
 app.use("/api", profileRoutes);
