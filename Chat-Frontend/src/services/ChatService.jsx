@@ -10,7 +10,6 @@ import axios from "axios";
 import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useSelector } from "react-redux";
-import { Socket } from "socket.io-client";
 
 const configuration = {
   iceServers: [
@@ -72,49 +71,49 @@ const ChatPage = () => {
   const [menuAnimation, setMenuAnimation] = useState(false);
   const [requestState, setRequestState] = useState("");
 
-  // const [scale, setScale] = useState(1);
-  // const [translate, setTranslate] = useState({ x: 0, y: 0 });
-  // const [isDragging, setIsDragging] = useState(false);
-  // const dragStart = useRef({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
 
-  // // Zoom in and zoom out by scrole wheel
-  // const handleWheel = (e) => {
-  //   e.preventDefault();
-  //   const delta = e.deltaY > 0 ? -0.1 : 0.1;
-  //   setScale((prev) => Math.max(1, Math.min(5, prev + delta)));
-  // };
+  // Zoom in and zoom out by scrole wheel
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setScale((prev) => Math.max(1, Math.min(5, prev + delta)));
+  };
 
-  // // Moving image by drag after Click mouse button
-  // const handleMouseDown1 = (e) => {
-  //   e.preventDefault();
-  //   setIsDragging(true);
-  //   dragStart.current = {
-  //     x: e.clientX - translate.x,
-  //     y: e.clientY - translate.y,
-  //   };
-  // };
+  // Moving image by drag after Click mouse button
+  const handleMouseDown1 = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - translate.x,
+      y: e.clientY - translate.y,
+    };
+  };
 
-  // // Dragging move stop
-  // const handleMouseUp1 = () => {
-  //   setIsDragging(false);
-  // };
+  // Dragging move stop
+  const handleMouseUp1 = () => {
+    setIsDragging(false);
+  };
 
-  // // touch
-  // const startDrag = (e) => {
-  //   e.preventDefault();
-  //   const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
-  //   const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+  // touch
+  const startDrag = (e) => {
+    e.preventDefault();
+    const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
 
-  //   offset = {
-  //     x: clientX - localVideoPos.x,
-  //     y: clientY - localVideoPos.y,
-  //   };
+    offset = {
+      x: clientX - localVideoPos.x,
+      y: clientY - localVideoPos.y,
+    };
 
-  //   document.addEventListener("mousemove", onDrag);
-  //   document.addEventListener("mouseup", stopDrag);
-  //   document.addEventListener("touchmove", onDrag);
-  //   document.addEventListener("touchend", stopDrag);
-  // };
+    document.addEventListener("mousemove", onDrag);
+    document.addEventListener("mouseup", stopDrag);
+    document.addEventListener("touchmove", onDrag);
+    document.addEventListener("touchend", stopDrag);
+  };
   // touch
   const onDrag = (e) => {
     const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;

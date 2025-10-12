@@ -18,6 +18,7 @@ import AiAssistant from "../services/AiAssistant.jsx";
 import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { API } from "../Backend_API.js";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const Layout = () => {
   const [email, setEmail] = useState();
@@ -43,6 +44,7 @@ const Layout = () => {
   const [statusClick, setStatusClick] = useState(false);
   const dispatch = useDispatch();
   const [editedAbout, setEditedAbout] = useState(userAbout);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   // useeffect for contextMenu
   useEffect(() => {
@@ -239,14 +241,29 @@ const Layout = () => {
                 <div className="flex flex-col items-start relative w-full">
                   <div className="relative">
                     <div className="relative w-24 h-24">
-                      <Zoom>
+                      {isZoomed ? (
+                        <TransformWrapper
+                          initialScale={1}
+                          wheel={{ step: 0.1 }}
+                          pinch={{ step: 5 }}
+                          doubleClick={{ disabled: true }}>
+                          <TransformComponent>
+                            <img
+                              src={userAvatar}
+                              alt="Profile"
+                              className="w-[48vw] h-[95vh]"
+                              onClick={() => setShowFullImage(true)}
+                            />
+                          </TransformComponent>
+                        </TransformWrapper>
+                      ) : (
                         <img
                           src={userAvatar}
                           alt="Profile"
+                           onClick={() => setIsZoomed(true)}
                           className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                          onClick={() => setShowFullImage(true)}
                         />
-                      </Zoom>
+                      )}
                       <label className="absolute -bottom-1 -right-1 bg-white border border-gray-300 p-1 rounded-full shadow cursor-pointer">
                         <FaCamera className="text-blue-600 text-xs" />
                         <input
