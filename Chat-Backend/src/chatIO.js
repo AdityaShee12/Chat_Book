@@ -8,13 +8,15 @@ import { Message } from "./models/Message.models.js";
 import { Notification } from "./models/notification.models.js";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { API } from "./Frontend_API.js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: "./.env" });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new socketio(server, {
   cors: {
-    origin: API,
+    origin: process.env.FRONTEND_API,
     methods: ["GET", "POST"],
     credentials: true,
   },

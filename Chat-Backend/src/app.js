@@ -5,18 +5,14 @@ import userRouter from "./routes/user.routes.js"; // User Routes Import
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import "./OAuth20.js";
-import { API } from "./Frontend_API.js";
+import dotenv from "dotenv";
 
+
+dotenv.config({ path: "./.env" });
 const app = express();
-app.use(
-  cors({
-    origin: "https://real-time-chat-application-eta.vercel.app", // তোমার frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true, // যদি cookie/token পাঠাও
-  })
-);
+
 // Middleware Setup
-app.use(cors({ origin: API, credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_API, methods: ["GET", "POST"], credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
