@@ -17,7 +17,6 @@ import StatusUpload from "../services/statusUpload.jsx";
 import AiAssistant from "../services/AiAssistant.jsx";
 import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { API } from "../Backend_API.js";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const Layout = () => {

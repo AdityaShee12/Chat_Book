@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
-import { API } from "./Backend_API.js";
-const socket = io(API, {
+
+const socket = io("https://real-time-chat-application-klxp.onrender.com", {
   withCredentials: true,
 });
 
