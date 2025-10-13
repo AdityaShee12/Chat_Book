@@ -1,7 +1,4 @@
 import axios from "axios";
-import dotenv from "dotenv";
-
-dotenv.config({ path: "./.env" });
 
 // Register a new user
 export const registerUser = async (formData) => {
