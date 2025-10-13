@@ -27,7 +27,7 @@ const StatusUpload = () => {
     formData.append("userId", userId);
 
     try {
-      const response = await axios.post("/api/v1/users/status", formData, {
+      const response = await axios.post("https://real-time-chat-application-klxp.onrender.com/api/v1/users/status", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
@@ -40,7 +40,7 @@ const StatusUpload = () => {
 
   useEffect(() => {
     const statusShow = async () => {
-      const response = await axios.get("/api/v1/users/statusShow",userId);
+      const response = await axios.get("https://real-time-chat-application-klxp.onrender.com/api/v1/users/statusShow",userId);
       console.log(response);     
     };
     statusShow();

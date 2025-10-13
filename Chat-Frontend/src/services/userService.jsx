@@ -1,5 +1,7 @@
 import axios from "axios";
-import { API } from "../Backend_API";
+import dotenv from "dotenv";
+
+dotenv.config({ path: "./.env" });
 
 // Register a new user
 export const registerUser = async (formData) => {
@@ -8,22 +10,30 @@ export const registerUser = async (formData) => {
       "Content-Type": "multipart/form-data",
     },
   };
-  const response = await axios.post(`${API}/api/v1/users/register`, formData, config);
+  const response = await axios.post(
+    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/register",
+    formData,
+    config
+  );
   return response.data;
 };
 
 // Login a user
 export const loginUser = async (credentials) => {
-  const response = await axios.post(`${API}/api/v1/users/login`, credentials, {
-    withCredentials: true,
-  });
+  const response = await axios.post(
+    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/login",
+    credentials,
+    {
+      withCredentials: true,
+    }
+  );
   return response.data;
 };
 
 // Logout the user
 export const logoutUser = async () => {
   const response = await axios.post(
-    `${API}/api/v1/users/logout`,
+    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/logout",
     {},
     {
       withCredentials: true,
@@ -35,7 +45,7 @@ export const logoutUser = async () => {
 // Refresh the access token
 export const refreshAccessToken = async () => {
   const response = await axios.post(
-    `${API}/api/v1/users/refresh-token`,
+    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/refresh-token",
     {},
     {
       withCredentials: true,

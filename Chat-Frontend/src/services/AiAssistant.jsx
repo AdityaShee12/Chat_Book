@@ -14,7 +14,7 @@ const AiAssistant = ({ dp, ToName = "Gimmy", state = "Online" }) => {
       { sender: "You", message: userMessage }
     ];
   
-    const res = await fetch("http://localhost:5173/api/v1/users/chat_Ai", {
+    const res = await fetch("/api/v1/users/chat_Ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages:updatedMessages }),

@@ -134,7 +134,7 @@ const Layout = () => {
 
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profilePicChange`,
+        "https://real-time-chat-application-klxp.onrender.com/api/v1/users/profilePicChange",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -151,7 +151,7 @@ const Layout = () => {
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        `${API}/api/v1/users/profileAboutChange`,
+        "https://real-time-chat-application-klxp.onrender.com/api/v1/users/profileAboutChange",
         {
           userId,
           about: editedText,
@@ -170,7 +170,7 @@ const Layout = () => {
   // Logout
   const handleLogout = async () => {
     const response = await axios.post(
-      `${API}/api/v1/users/logout`,
+      "https://real-time-chat-application-klxp.onrender.com/api/v1/users/logout",
       { userId },
       {
         withCredentials: true,
