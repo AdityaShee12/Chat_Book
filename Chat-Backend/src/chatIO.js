@@ -1,6 +1,6 @@
 import { app } from "./app.js";
 import http from "http";
-import { Server as socketio } from "socket.io";
+import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
 import { User } from "./models/user.models.js";
@@ -14,7 +14,7 @@ dotenv.config({ path: "./.env" });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
-const io = new socketio(server, {
+const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_API,
     methods: ["GET", "POST"],
