@@ -29,36 +29,10 @@ const Sign_up = () => {
 
   // OAuth login
   const login = () => {
-    window.open("https://real-time-chat-application-klxp.onrender.com/auth/google", "_self");
-  };
-
-  // send OTP
-  const sendOtp = async () => {
-    try {
-      const response = await axios.post("https://real-time-chat-application-klxp.onrender.com/api/v1/users/otp", { email });
-      console.log(response);
-      console.log(response.data.data.email);
-      console.log(response.data.data.otp);
-      setVerifyOtp(response.data.data.otp);
-      setregisterEmail(response.data.data.email);
-      setOtpSent(false);
-      setotpVerified(true);
-    } catch (error) {
-      console.error("Try again", error);
-    }
-  };
-
-  // Verify OTP
-  const verify = () => {
-    console.log(otp, verifyOtp);
-
-    if (otp === verifyOtp) {
-      console.log("V", registeremail);
-      setotpVerified(false);
-      setCreateAccount(true);
-    } else {
-      console.log("You gave the wrong OTP");
-    }
+    window.open(
+      "https://real-time-chat-application-klxp.onrender.com/auth/google",
+      "_self"
+    );
   };
 
   // Sign IN
@@ -114,87 +88,50 @@ const Sign_up = () => {
         className="w-[70vw] h-auto border border-slate-400 rounded-md flex flex-col items-center lg:w-[30rem]
         xl:w-[30vw] xl:h-auto
       ">
-        {otpSent && (
-          <>
-            <button
-              className="m-[18%] bg-blue-700 text-white text-[1.3rem] rounded-xl w-[60vw] h-[7vh] lg:m-[15%] lg:w-[39vw] lg:text-[1.7rem]
+        <button
+          className="m-[18%] bg-blue-700 text-white text-[1.3rem] rounded-xl w-[60vw] h-[7vh] lg:m-[15%] lg:w-[39vw] lg:text-[1.7rem]
             xl:w-[25vw] xl:text-[1rem] xl:m-[8%]">
-              Login with Google
-            </button>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
-            />
-            <button
-              onClick={sendOtp}
-              className="w-[60vw] h-[7vh] m-[8%] border rounded-xl border-slate-400 text-xl font-semibold lg:w-[39vw] lg:text-[1.7rem]  xl:w-[25vw] xl:text-[1rem]
-              transition duration-300 hover:shadow-lg hover:shadow-sky-400">
-              Send OTP
-            </button>
-            <button
-              className="w-[60vw] h-[7vh] border rounded-xl mb-[10%] border-slate-400 text-xl font-semibold lg:w-[39vw] lg:text-[1.7rem]  xl:w-[25vw] xl:text-[1rem]"
-              onClick={signIn}>
-              Sign in
-            </button>
-          </>
-        )}
-        {otpVerified && (
-          <>
-            <input
-              type="number"
-              value={otp}
-              onChange={(e) => {
-                setOtp(e.target.value);
-              }}
-              placeholder="Enter your OTP"
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]"
-            />
-            <button
-              onClick={verify}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] mb-[18%] lg:mb-[15%] xl:mb-[8%]">
-              Verify your OTP
-            </button>
-          </>
-        )}
-        {createAccount && (
-          <>
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-              }}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]"
-            />
-            <input
-              type="text"
-              placeholder="Username"
-              value={userName}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] mt-[18%] lg:mt-[15%] xl:mt-[8%]"
-            />
-            <button
-              onClick={chooseAvatar}
-              className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]  transition duration-300 hover:shadow-lg hover:shadow-sky-400">
-              Next
-            </button>
-          </>
-        )}
+          Login with Google
+        </button>
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={fullName}
+          onChange={(e) => {
+            setFullName(e.target.value);
+          }}
+          className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]"
+        />
+        <input
+          type="text"
+          placeholder="Username"
+          value={userName}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
+        />
+        <input
+          type="email"
+          placeholder="Enter your email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
+          className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem]"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
+          className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] mt-[18%] lg:mt-[15%] xl:mt-[8%]"
+        />
+        <button
+          onClick={chooseAvatar}
+          className="w-[60vw] h-[7vh] border border-slate-400 text-xl rounded-xl pl-2  lg:w-[39vw] lg:text-[1.7rem]]  xl:w-[25vw] xl:text-[1rem] m-[18%] lg:m-[15%] xl:m-[8%]  transition duration-300 hover:shadow-lg hover:shadow-sky-400">
+          Next
+        </button>
       </div>
       {profilepic && (
         <div className="w-[20rem] flex flex-col items-center border md:w-[34rem] lg:w-[30rem] xl:w-[26rem] h-auto border-slate-400 rounded-xl">
