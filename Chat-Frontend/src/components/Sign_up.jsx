@@ -29,7 +29,7 @@ const Sign_up = () => {
 
   // OAuth login
   const login = () => {
-    window.open("http://localhost:8000/auth/google", "_self");
+    window.open("https://chat-book-u2yq.onrender.com/auth/google", "_self");
   };
 
   // send OTP

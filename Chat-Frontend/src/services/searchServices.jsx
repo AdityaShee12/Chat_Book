@@ -42,7 +42,7 @@ const Search = () => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          "https://real-time-chat-application-klxp.onrender.com/api/v1/users/userList?userId=${userId}"
+          "https://chat-book-u2yq.onrender.com/api/v1/users/userList?userId=${userId}"
         );
         console.log("Res", response);
 
@@ -71,7 +71,7 @@ const Search = () => {
     }
     try {
       const response = await axios.get(
-        `https://real-time-chat-application-klxp.onrender.com/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `https://chat-book-u2yq.onrender.com/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
