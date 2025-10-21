@@ -12,7 +12,7 @@ dotenv.config({ path: "./.env" });
 const app = express();
 
 // Middleware Setup
-app.use(cors({ origin: "https://chat-book-u2yq.onrender.com", methods: ["GET", "POST"], credentials: true }));
+app.use(cors({ origin: "https://chat-book-ecru.vercel.app", methods: ["GET", "POST"], credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
