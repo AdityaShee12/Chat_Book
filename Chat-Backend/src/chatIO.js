@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-book-u2yq.onrender.com",
+    origin: "https://chat-book-ecru.vercel.app/",
     methods: ["GET", "POST"],
     credentials: true,
   },
