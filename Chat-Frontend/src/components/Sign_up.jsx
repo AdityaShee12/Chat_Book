@@ -35,7 +35,7 @@ const Sign_up = () => {
   // send OTP
   const sendOtp = async () => {
     try {
-      const response = await axios.post("/api/v1/users/otp", { email });
+      const response = await axios.post("https://chat-book-u2yq.onrender.com/api/v1/users/otp", { email });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);

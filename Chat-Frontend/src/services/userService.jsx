@@ -8,7 +8,7 @@ export const registerUser = async (formData) => {
     },
   };
   const response = await axios.post(
-    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/register",
+    "https://chat-book-u2yq.onrender.com/api/v1/users/register",
     formData,
     config
   );
@@ -18,7 +18,7 @@ export const registerUser = async (formData) => {
 // Login a user
 export const loginUser = async (credentials) => {
   const response = await axios.post(
-    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/login",
+    "https://chat-book-u2yq.onrender.com/api/v1/users/login",
     credentials,
     {
       withCredentials: true,
@@ -30,7 +30,7 @@ export const loginUser = async (credentials) => {
 // Logout the user
 export const logoutUser = async () => {
   const response = await axios.post(
-    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/logout",
+    "https://chat-book-u2yq.onrender.com/api/v1/users/logout",
     {},
     {
       withCredentials: true,
@@ -42,7 +42,7 @@ export const logoutUser = async () => {
 // Refresh the access token
 export const refreshAccessToken = async () => {
   const response = await axios.post(
-    "https://real-time-chat-application-klxp.onrender.com/api/v1/users/refresh-token",
+    "https://chat-book-u2yq.onrender.com/api/v1/users/refresh-token",
     {},
     {
       withCredentials: true,
