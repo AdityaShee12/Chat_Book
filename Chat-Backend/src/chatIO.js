@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_API,
+    origin: "https://chat-book-u2yq.onrender.com",
     methods: ["GET", "POST"],
     credentials: true,
   },
