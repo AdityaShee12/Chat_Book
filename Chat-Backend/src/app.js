@@ -6,13 +6,13 @@ import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import "./OAuth20.js";
 import dotenv from "dotenv";
-
+import { FRONTEND_API } from "./Frontend_API.js";
 
 dotenv.config({ path: "./.env" });
 const app = express();
 
 // Middleware Setup
-app.use(cors({ origin: "https://chat-book-ecru.vercel.app", methods: ["GET", "POST"], credentials: true }));
+app.use(cors({ origin: FRONTEND_API, methods: ["GET", "POST"], credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

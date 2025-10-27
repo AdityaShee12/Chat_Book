@@ -1,4 +1,5 @@
 import axios from "axios";
+import { BACKEND_API } from "../Backend_API";
 
 // Register a new user
 export const registerUser = async (formData) => {
@@ -8,7 +9,7 @@ export const registerUser = async (formData) => {
     },
   };
   const response = await axios.post(
-    "https://chat-book-u2yq.onrender.com/api/v1/users/register",
+    `${BACKEND_API}/api/v1/users/register`,
     formData,
     config
   );
@@ -18,7 +19,7 @@ export const registerUser = async (formData) => {
 // Login a user
 export const loginUser = async (credentials) => {
   const response = await axios.post(
-    "https://chat-book-u2yq.onrender.com/api/v1/users/login",
+    `${BACKEND_API}/api/v1/users/login`,
     credentials,
     {
       withCredentials: true,
@@ -30,7 +31,7 @@ export const loginUser = async (credentials) => {
 // Logout the user
 export const logoutUser = async () => {
   const response = await axios.post(
-    "https://chat-book-u2yq.onrender.com/api/v1/users/logout",
+    `${BACKEND_API}/api/v1/users/logout`,
     {},
     {
       withCredentials: true,
@@ -42,7 +43,7 @@ export const logoutUser = async () => {
 // Refresh the access token
 export const refreshAccessToken = async () => {
   const response = await axios.post(
-    "https://chat-book-u2yq.onrender.com/api/v1/users/refresh-token",
+    `${BACKEND_API}/api/v1/users/refresh-token`,
     {},
     {
       withCredentials: true,

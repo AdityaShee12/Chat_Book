@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
 import { User } from "./models/user.models.js";
 import jwt from "jsonwebtoken";
+import { FRONTEND_API } from "./Frontend_API.js";
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "https://chat-book-u2yq.onrender.com/auth/google/callback",
+      callbackURL: `${FRONTEND_API}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

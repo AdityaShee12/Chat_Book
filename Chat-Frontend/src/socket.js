@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
-
-const socket = io("https://chat-book-u2yq.onrender.com", {
+import { BACKEND_API } from "./Backend_API";
+const socket = io(BACKEND_API, {
   withCredentials: true,
 });
 

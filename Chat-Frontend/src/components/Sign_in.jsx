@@ -9,6 +9,7 @@ import {
 } from "../features/userSlice";
 import { useDispatch } from "react-redux";
 import axios from "axios";
+import { BACKEND_API } from "../Backend_API.jsx";
 
 const Sign_in = () => {
   const [signIn, setSignIn] = useState(true);
@@ -50,7 +51,7 @@ const Sign_in = () => {
   };
 
   const sendOTP = async () => {
-    const response = await axios.post("https://chat-book-u2yq.onrender.com/api/v1/users/otp", { email });
+    const response = await axios.post(`${BACKEND_API}/api/v1/users/otp`, { email });
     setChangePassword(false);
     setOtpVerified(true);
     setVerifyOtp(response.data.data.otp);
@@ -67,7 +68,7 @@ const Sign_in = () => {
 
   const passwordMaking = async () => {
     try {
-      const response = await axios.post("https://chat-book-u2yq.onrender.com/api/v1/users/passwordChange", {
+      const response = await axios.post(`${BACKEND_API}/api/v1/users/passwordChange`, {
         password,
         email,
       });

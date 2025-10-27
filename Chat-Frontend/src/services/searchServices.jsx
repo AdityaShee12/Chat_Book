@@ -7,6 +7,7 @@ import socket from "../socket.js";
 import { AiOutlineSearch } from "react-icons/ai";
 import { setSelectUser } from "../features/userSlice.js";
 import { useDispatch, useSelector } from "react-redux";
+import { BACKEND_API } from "../Backend_API.js";
 
 const Search = () => {
   const navigate = useNavigate();
@@ -32,7 +33,6 @@ const Search = () => {
           padding: CryptoJS.pad.Pkcs7,
         }
       );
-      console.log("SD", bytes.toString(CryptoJS.enc.Utf8));
       return bytes.toString(CryptoJS.enc.Utf8);
     }
   }
@@ -42,7 +42,7 @@ const Search = () => {
     setTimeout(async () => {
       try {
         const response = await axios.get(
-          "https://chat-book-u2yq.onrender.com/api/v1/users/userList?userId=${userId}"
+          `${BACKEND_API}/api/v1/users/userList?userId=${userId}`
         );
         console.log("Res", response);
 
@@ -71,7 +71,7 @@ const Search = () => {
     }
     try {
       const response = await axios.get(
-        `https://chat-book-u2yq.onrender.com/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
+        `${BACKEND_API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
       const usersWithUUID = response.data.map((user) => ({
         ...user,
@@ -135,7 +135,6 @@ const Search = () => {
   // After selecting user from userlist
   const handleSelectUser = (user) => {
     const recieverName = user.fullName.replace(/\s+/g, "");
-    console.log("selectId", user._id);
     dispatch(
       setSelectUser({
         receiverId: user._id,

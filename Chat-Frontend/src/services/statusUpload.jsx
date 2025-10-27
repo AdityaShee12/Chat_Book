@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { AiOutlineCamera, AiOutlineClose } from "react-icons/ai";
+import { BACKEND_API } from "../Backend_API";
 
 const StatusUpload = () => {
   const [statuses, setStatuses] = useState([]);
@@ -27,7 +28,7 @@ const StatusUpload = () => {
     formData.append("userId", userId);
 
     try {
-      const response = await axios.post("https://chat-book-u2yq.onrender.com/api/v1/users/status", formData, {
+      const response = await axios.post(`${BACKEND_API}/api/v1/users/status`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
@@ -40,7 +41,7 @@ const StatusUpload = () => {
 
   useEffect(() => {
     const statusShow = async () => {
-      const response = await axios.get("https://chat-book-u2yq.onrender.com/api/v1/users/statusShow",userId);
+      const response = await axios.get(`${BACKEND_API}/api/v1/users/statusShow`,userId);
       console.log(response);     
     };
     statusShow();

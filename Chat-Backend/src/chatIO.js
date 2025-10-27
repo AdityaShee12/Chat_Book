@@ -9,6 +9,7 @@ import { Notification } from "./models/notification.models.js";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
+import { FRONTEND_API } from "./Frontend_API.js";
 
 dotenv.config({ path: "./.env" });
 
@@ -16,7 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-book-ecru.vercel.app",
+    origin: FRONTEND_API,
     methods: ["GET", "POST"],
     credentials: true,
   },

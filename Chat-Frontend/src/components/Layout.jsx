@@ -18,6 +18,7 @@ import AiAssistant from "../services/AiAssistant.jsx";
 import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { BACKEND_API } from "../Backend_API.jsx";
 
 const Layout = () => {
   const [email, setEmail] = useState();
@@ -133,7 +134,7 @@ const Layout = () => {
 
     try {
       const response = await axios.post(
-        "https://chat-book-u2yq.onrender.com/api/v1/users/profilePicChange",
+        `${BACKEND_API}/api/v1/users/profilePicChange`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -150,7 +151,7 @@ const Layout = () => {
   const handleProfileAboutChange = async (editedText) => {
     try {
       const response = await axios.post(
-        "https://chat-book-u2yq.onrender.com/api/v1/users/profileAboutChange",
+        `${BACKEND_API}/api/v1/users/profileAboutChange`,
         {
           userId,
           about: editedText,
@@ -169,7 +170,7 @@ const Layout = () => {
   // Logout
   const handleLogout = async () => {
     const response = await axios.post(
-      "https://chat-book-u2yq.onrender.com/api/v1/users/logout",
+      `${BACKEND_API}/api/v1/users/logout`,
       { userId },
       {
         withCredentials: true,

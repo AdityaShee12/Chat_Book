@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FiSend } from "react-icons/fi";
 import { SiOpenai } from "react-icons/si";
+import { BACKEND_API } from "../Backend_API";
 
 const AiAssistant = ({ dp, ToName = "Gimmy", state = "Online" }) => {
   const [messages, setMessages] = useState([]);
@@ -14,7 +15,7 @@ const AiAssistant = ({ dp, ToName = "Gimmy", state = "Online" }) => {
       { sender: "You", message: userMessage }
     ];
   
-    const res = await fetch("/api/v1/users/chat_Ai", {
+    const res = await fetch(`${BACKEND_API}/api/v1/users/chat_Ai`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages:updatedMessages }),
