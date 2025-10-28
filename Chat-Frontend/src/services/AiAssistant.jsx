@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FiSend } from "react-icons/fi";
 import { SiOpenai } from "react-icons/si";
-import { BACKEND_API } from "../Backend_API";
+import { BACKEND_API } from "../Backend_API.js";
 
 const AiAssistant = ({ dp, ToName = "Gimmy", state = "Online" }) => {
   const [messages, setMessages] = useState([]);

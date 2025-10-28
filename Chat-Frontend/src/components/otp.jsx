@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BACKEND_API } from "../Backend_API";
+import { BACKEND_API } from "../Backend_API.js";
 
 const Otp = () => {
   const [email, setEmail] = useState("");

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BACKEND_API } from "../Backend_API";
+import { BACKEND_API } from "../Backend_API.js";
 
 // Register a new user
 export const registerUser = async (formData) => {

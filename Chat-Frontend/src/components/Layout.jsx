@@ -18,7 +18,7 @@ import AiAssistant from "../services/AiAssistant.jsx";
 import { setUserAvatar, setUserAbout, clearUser } from "../features/userSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { BACKEND_API } from "../Backend_API.jsx";
+import { BACKEND_API } from "../Backend_API.js";
 
 const Layout = () => {
   const [email, setEmail] = useState();

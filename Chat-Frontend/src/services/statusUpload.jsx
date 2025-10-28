@@ -3,7 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { AiOutlineCamera, AiOutlineClose } from "react-icons/ai";
-import { BACKEND_API } from "../Backend_API";
+import { BACKEND_API } from "../Backend_API.js";
 
 const StatusUpload = () => {
   const [statuses, setStatuses] = useState([]);
