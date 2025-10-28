@@ -9,6 +9,7 @@ import {
   setUserAbout,
 } from "../features/userSlice";
 import { useDispatch } from "react-redux";
+import { BACKEND_API } from "../Backend_API.js";
 
 const Sign_up = () => {
   const [profilepic, setProfilepic] = useState(false);
