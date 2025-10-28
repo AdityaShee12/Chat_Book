@@ -27,6 +27,7 @@ const Sign_up = () => {
   const [about, setAbout] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  console.log("Back",BACKEND_API);
 
   // OAuth login
   const login = () => {
@@ -36,7 +37,9 @@ const Sign_up = () => {
   // send OTP
   const sendOtp = async () => {
     try {
-      const response = await axios.post(`${BACKEND_API}/api/v1/users/otp`, { email });
+      const response = await axios.post(`${BACKEND_API}/api/v1/users/otp`, {
+        email,
+      });
       console.log(response);
       console.log(response.data.data.email);
       console.log(response.data.data.otp);
@@ -90,8 +93,8 @@ const Sign_up = () => {
     formData.append("email", email);
     formData.append("password", password);
     formData.append("about", about);
-    console.log("Username",userName);
-    
+    console.log("Username", userName);
+
     if (avatar) formData.append("avatar", avatar);
     try {
       console.log("Form Data", [...formData]);
