@@ -27,7 +27,7 @@ const Sign_up = () => {
   const [about, setAbout] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  console.log("Back",BACKEND_API);
+  console.log("Back", BACKEND_API);
 
   // OAuth login
   const login = () => {
@@ -37,6 +37,7 @@ const Sign_up = () => {
   // send OTP
   const sendOtp = async () => {
     try {
+      console.log(BACKEND_API);
       const response = await axios.post(`${BACKEND_API}/api/v1/users/otp`, {
         email,
       });
