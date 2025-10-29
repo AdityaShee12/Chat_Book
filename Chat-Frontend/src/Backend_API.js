@@ -1,2 +1,2 @@
-export const BACKEND_API = import.meta.env.VITE_Production
+export const BACKEND_API = import.meta.env.VITE_PRODUCTION 
 
