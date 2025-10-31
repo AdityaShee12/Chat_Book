@@ -5,7 +5,7 @@ import { Message } from "../models/Message.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
-import { transporter } from "../sendOTP.js";
+import transporter from "../sendOTP.js";
 import { v4 as uuidv4 } from "uuid";
 import { Status } from "../models/Status.model.js";
 
@@ -29,7 +29,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 const sendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  console.log("Emails",email);
+  console.log("Emails", email);
 
   if (!email) return res.status(400).json({ message: "Email is required!" });
   const generateOTP = () =>
@@ -41,8 +41,10 @@ const sendOtp = asyncHandler(async (req, res) => {
     subject: "Your OTP Code",
     text: `Your OTP is ${otp}.`,
   };
+  console.log("Work1");
   try {
-    await transporter.sendMail(mailOptions);
+    transporter.sendMail(mailOptions);
+    console.log("Work2");
     const responseData = {
       message: `OTP sent successfully to ${email}`,
       otp,
