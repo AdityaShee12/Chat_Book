@@ -5,7 +5,7 @@ import { Message } from "../models/Message.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
-import transporter from "../sendOTP.js";
+import {transporter} from "../sendOTP.js";
 import { v4 as uuidv4 } from "uuid";
 import { Status } from "../models/Status.model.js";
 
