@@ -29,7 +29,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 const sendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  console.log(email);
+  console.log("Emails",email);
 
   if (!email) return res.status(400).json({ message: "Email is required!" });
   const generateOTP = () =>

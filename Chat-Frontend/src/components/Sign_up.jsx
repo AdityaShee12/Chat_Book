@@ -37,7 +37,7 @@ const Sign_up = () => {
   // send OTP
   const sendOtp = async () => {
     try {
-      console.log("Back", BACKEND_API);
+      console.log("Back", BACKEND_API,email);
       const response = await axios.post(`${BACKEND_API}/api/v1/users/otp`, {
         email,
       });
