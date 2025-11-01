@@ -66,6 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
+console.log(userName);
 
   const existedUser = await User.findOne({
     $or: [{ userName }, { email }],
@@ -310,7 +311,7 @@ const searchUser = asyncHandler(async (req, res) => {
             const lastMessage = chat.messages[chat.messages.length - 1];
             userData.push({
               _id: user.id,
-              fullName: user.name,
+              fullName: user.fullName,
               avatar: user.avatar || "",
               lastMessage: {
                 text: lastMessage?.text || null,
@@ -325,14 +326,13 @@ const searchUser = asyncHandler(async (req, res) => {
         if (!processedUserIds.has(user._id.toString())) {
           userData.push({
             _id: user._id,
-            fullName: user.name,
+            fullName: user.fullName,
             avatar: user.avatar || "",
           });
         }
       });
     }
-    console.log("UD", users);
-
+    console.log("Users",userData);
     res.json(userData);
   } catch (error) {
     res.status(500).json({ error: "Server error" });

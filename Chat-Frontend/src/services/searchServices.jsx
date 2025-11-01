@@ -73,6 +73,7 @@ const Search = () => {
       const response = await axios.get(
         `${BACKEND_API}/api/v1/users/searchUser?query=${searchText}&userId=${userId}`
       );
+      console.log("Res", response);
       const usersWithUUID = response.data.map((user) => ({
         ...user,
       }));
@@ -100,6 +101,7 @@ const Search = () => {
       });
       return updatedUsers;
     });
+    console.log("Recentusers", recentUsers);
   };
 
   // After sending last message userlist update code
