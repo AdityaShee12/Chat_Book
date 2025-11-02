@@ -77,6 +77,8 @@ console.log(userName);
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
+  console.log("Avatar",avatarLocalPath);
+  
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   const googleId = uuidv4();
