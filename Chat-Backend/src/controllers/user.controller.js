@@ -80,7 +80,7 @@ console.log(userName);
   console.log("Avatar",avatarLocalPath);
   
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-console.log("AvatarURL",avatar?.url);
+console.log("AvatarURL",avatar);
 
   const googleId = uuidv4();
 
