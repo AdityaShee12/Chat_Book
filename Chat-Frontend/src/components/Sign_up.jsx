@@ -101,7 +101,7 @@ const Sign_up = () => {
       console.log("Form Data", [...formData]);
       console.log(email);
       const response = await registerUser(formData);
-      console.log(response);
+      console.log("Response",response);
       dispatch(setUserId({ userId: response.data._id }));
       dispatch(setUserName({ userName: response.data.fullName }));
       dispatch(setUserAvatar({ userAvatar: response.data.avatar }));

@@ -5,7 +5,7 @@ import { Message } from "../models/Message.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
-import {transporter} from "../sendOTP.js";
+import { transporter } from "../sendOTP.js";
 import { v4 as uuidv4 } from "uuid";
 import { Status } from "../models/Status.model.js";
 
@@ -66,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
-console.log(userName);
+  console.log(userName);
 
   const existedUser = await User.findOne({
     $or: [{ userName }, { email }],
@@ -77,10 +77,10 @@ console.log(userName);
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  console.log("Avatar",avatarLocalPath);
-  
+  console.log("Avatar", avatarLocalPath);
+
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-console.log("AvatarURL",avatar);
+  console.log("AvatarURL", avatar);
 
   const googleId = uuidv4();
 
@@ -335,7 +335,7 @@ const searchUser = asyncHandler(async (req, res) => {
         }
       });
     }
-    console.log("Users",userData);
+    console.log("Users", userData);
     res.json(userData);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
