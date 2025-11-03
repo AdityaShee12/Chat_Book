@@ -9,6 +9,7 @@ const initialState = {
     receiverId: "",
     receiverName: "",
     receiverAvatar: "",
+    receiverAbout: "",
   },
 };
 
@@ -32,6 +33,7 @@ const userSlice = createSlice({
       state.selectUser.receiverId = action.payload.receiverId;
       state.selectUser.receiverName = action.payload.receiverName;
       state.selectUser.receiverAvatar = action.payload.receiverAvatar;
+      state.selectUser.receiverAbout = action.payload.receiverAbout;
     },
     clearUser: (state) => {
       state.userId = "";

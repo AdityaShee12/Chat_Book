@@ -27,7 +27,7 @@ const ChatPage = () => {
     userId,
     userName,
     userAvatar,
-    selectUser: { receiverId, receiverName, receiverAvatar },
+    selectUser: { receiverId, receiverName, receiverAvatar, receiverAbout },
   } = useSelector((state) => state.user);
   const secretKey = "0123456789abcdef0123456789abcdef";
   const iv = "abcdef9876543210abcdef9876543210";
@@ -152,7 +152,7 @@ const ChatPage = () => {
     clearTimeout(pressTimer);
   };
 
-  // Handling Message
+  // Handling state online or offline
   useEffect(() => {
     const recieverFunction = async () => {
       try {
@@ -884,6 +884,8 @@ const ChatPage = () => {
 
   // Code for accept or reject reply
   socket.on("requestReply", (accept) => {
+    console.log("Accept",accept);
+    
     if (accept) {
       setMessages((prev) => [
         ...prev,
@@ -1028,7 +1030,7 @@ const ChatPage = () => {
 
                   <div className="pl-[0.9rem] mb-[1rem]">
                     About
-                    <p>{about}</p>
+                    <p>{receiverAbout}</p>
                   </div>
                   <div className="pl-[0.9rem]  mb-[1rem]">
                     Phone number

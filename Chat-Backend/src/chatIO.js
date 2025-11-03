@@ -54,6 +54,8 @@ io.on("connection", (socket) => {
   socket.on(
     "reciever add",
     async ({ userId, userName, receiverId, receiverName }) => {
+      console.log("receiverid");
+      
       try {
         // send online or offline state
         users[userId].selectedUser = receiverId;
@@ -86,7 +88,7 @@ io.on("connection", (socket) => {
         console.log("oth", otherUsers);
 
         let isRelation = false;
-        otherUsers.otherUsers.map((user) => {
+        otherUsers?.otherUsers?.map((user) => {
           console.log("U R Id", user.id, receiverId);
           if (user.id.toString() === receiverId) {
             console.log("U R Id", user.id, receiverId);
@@ -108,6 +110,8 @@ io.on("connection", (socket) => {
           });
           if (chatData) {
             if (chatData.messages) {
+              console.log("state");
+              
               for (const message of chatData.messages) {
                 if (message.relation === "accept") {
                   io.to(userId).emit("friends", { requestState: "accept" });
@@ -126,6 +130,8 @@ io.on("connection", (socket) => {
             }
           }
         } else {
+          console.log("Nostate");
+          
           io.to(userId).emit("friends", { requestState: "noFriend" });
         }
       } catch (error) {

@@ -136,12 +136,15 @@ const Search = () => {
 
   // After selecting user from userlist
   const handleSelectUser = (user) => {
+    console.log("User",user);
+    
     const recieverName = user.fullName.replace(/\s+/g, "");
     dispatch(
       setSelectUser({
         receiverId: user._id,
         receiverName: user.fullName,
         receiverAvatar: user.avatar,
+        receiverAbout: user.about,
       })
     );
     setTimeout(() => {
