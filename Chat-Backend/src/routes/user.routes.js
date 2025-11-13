@@ -9,6 +9,8 @@ import {
   profilePicChange,
   profileAboutChange,
   userList,
+  statusUpload,
+    statusShow,
   refreshAccessToken,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -33,10 +35,20 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 router.route("/passwordChange").post(setPassword);
 router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/status").post(
+  upload.fields([
+    {
+      name: "status",
+      maxCount: 1,
+    },
+  ]),
+  statusUpload
+);
 router.post("/profilePicChange", upload.single("avatar"), profilePicChange);
 router.post("/profileAboutChange", profileAboutChange);
 router.route("/searchUser").get(searchUser);
 router.route("/userList").get(userList);
+router.route("/statusShow").post(statusShow);
 router.route("/refresh-token").post(refreshAccessToken);
 
 export default router;

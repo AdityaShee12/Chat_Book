@@ -7,7 +7,6 @@ import { User } from "./models/user.models.js";
 import { Message } from "./models/Message.models.js";
 import { Notification } from "./models/notification.models.js";
 import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
 import { FRONTEND_API } from "./Frontend_API.js";
 
@@ -54,8 +53,6 @@ io.on("connection", (socket) => {
   socket.on(
     "reciever add",
     async ({ userId, userName, receiverId, receiverName }) => {
-      console.log("receiverid");
-      
       try {
         // send online or offline state
         users[userId].selectedUser = receiverId;
@@ -82,14 +79,12 @@ io.on("connection", (socket) => {
           };
           io.to(userId).emit("state", "offline");
         }
-        console.log("ui", userId);
 
         const otherUsers = await User.findById(userId);
         console.log("oth", otherUsers);
 
         let isRelation = false;
         otherUsers?.otherUsers?.map((user) => {
-          console.log("U R Id", user.id, receiverId);
           if (user.id.toString() === receiverId) {
             console.log("U R Id", user.id, receiverId);
             isRelation = true;
@@ -111,7 +106,7 @@ io.on("connection", (socket) => {
           if (chatData) {
             if (chatData.messages) {
               console.log("state");
-              
+
               for (const message of chatData.messages) {
                 if (message.relation === "accept") {
                   io.to(userId).emit("friends", { requestState: "accept" });
@@ -131,7 +126,7 @@ io.on("connection", (socket) => {
           }
         } else {
           console.log("Nostate");
-          
+
           io.to(userId).emit("friends", { requestState: "noFriend" });
         }
       } catch (error) {
@@ -358,6 +353,7 @@ io.on("connection", (socket) => {
       );
       io.to(receiverId).emit("requestReply", { accept: 1 });
       io.to(userId).emit("friends", { requestState: "friend" });
+      console.log("Accept");
     } else {
       let existingChat = await Message.findOne({
         "users.id": { $all: [userId, receiverId] },
@@ -378,6 +374,7 @@ io.on("connection", (socket) => {
       );
       io.to(receiverId).emit("requestReply", { accept: 0 });
       io.to(userId).emit("friends", { requestState: "reject" });
+      console.log("Reject");
     }
   });
 
@@ -527,7 +524,6 @@ io.on("connection", (socket) => {
       match.viewers.map((socketId) => {
         if (users[socketId].selectedUser === match.id) {
           io.to(socketId).emit("checkDisconnect", "offline");
-          console.log("off");
         }
         if (users[socketId]?.viewers) {
           users[socketId].viewers = users[socketId].viewers.filter((id) => {

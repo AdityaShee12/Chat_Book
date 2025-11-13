@@ -7,8 +7,8 @@ import { FiSend, FiPaperclip, FiX } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { FiCopy, FiTrash2, FiStar } from "react-icons/fi";
 import axios from "axios";
-import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { IoArrowBack } from "react-icons/io5"; // or FaArrowLeft, MdArrowBack etc.
 import { useSelector } from "react-redux";
 
 const configuration = {
@@ -680,10 +680,6 @@ const ChatPage = () => {
     setTimeout(() => setMenuAnimation(true), 300);
   };
 
-  useEffect(() => {
-    console.log("profile", profileDetails);
-  }, [profileDetails]);
-
   const closeprofileContext = () => {
     setproFileDetails(false);
     setMenuAnimation(false);
@@ -807,11 +803,7 @@ const ChatPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    console.log("REQS", requestState);
-  }, [requestState]);
 
-  // Code for sending request
   const sendRequest = () => {
     const identifier = uuidv4();
     socket.emit("sendRequest", {
@@ -828,7 +820,7 @@ const ChatPage = () => {
       {
         sender: "You",
         identifier,
-        message: "You sent friendrequest to " + receiverName,
+        message: "You sent friend request to " + receiverName,
       },
     ]);
     setRequestState("sent");
@@ -852,12 +844,13 @@ const ChatPage = () => {
       setMessages((prev) => [
         ...prev,
         {
-          sender: "sender",
+          sender: "You",
           identifier,
           message: `You accepted ${receiverName}'s request`,
         },
       ]);
       setRequestState("friend");
+      console.log("Accept");
     }
     // Code for reject request
     else {
@@ -876,36 +869,41 @@ const ChatPage = () => {
         {
           sender: "sender",
           identifier,
-          message: "You rejected friendrequest of " + receiverName,
+          message: "You rejected friend request of " + receiverName,
         },
       ]);
+      console.log("Reject");
     }
   };
+  
+  useEffect(() => {
+    // Code for accept or reject reply
+    socket.on("requestReply", (accept) => {
+      console.log("Accept", accept);
 
-  // Code for accept or reject reply
-  socket.on("requestReply", (accept) => {
-    console.log("Accept",accept);
-    
-    if (accept) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "sender",
-          identifier,
-          message: `${receiverName} accepted your request`,
-        },
-      ]);
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "sender",
-          identifier,
-          message: `${receiverName} rejected your request`,
-        },
-      ]);
-    }
-  });
+      if (accept) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "sender",
+            identifier,
+            message: `${receiverName} accepted your request`,
+          },
+        ]);
+        setRequestState("friend");
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "sender",
+            identifier,
+            message: `${receiverName} rejected your request`,
+          },
+        ]);
+        setRequestState("reject");
+      }
+    });
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-between mt-[0.7rem] pl-[0.9rem] pr-[0.9rem]">

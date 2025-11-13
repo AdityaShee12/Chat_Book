@@ -9,8 +9,9 @@ const userSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      lowecase: true,
+      lowercase: true,
       trim: true,
+      match: [/\S+@\S+\.\S+/, "Please enter a valid email address"],
     },
     fullName: {
       type: String,
@@ -18,13 +19,17 @@ const userSchema = new Schema(
       trim: true,
       index: true,
     },
-    username: {
+    userName: {
       type: String,
-      // required: true,
+      required: true,
       unique: true,
       lowercase: true,
       trim: true,
       index: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20,
+      match: /^[a-z0-9._]+$/,
     },
     avatar: {
       type: String,
@@ -34,13 +39,25 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
+      // required: true,
     },
     refreshToken: {
       type: String,
     },
-    state: { type: String, default: "offline" },
-    viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    selectedUser: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    state: {
+      type: String,
+      enum: ["online", "offline"],
+      default: "offline",
+    },
+    otherUsers: [
+      {
+        id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

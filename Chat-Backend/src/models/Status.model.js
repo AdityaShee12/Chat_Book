@@ -3,6 +3,7 @@ import mongoose, { Schema } from "mongoose";
 const statusSchema = new Schema({
   uploader: {
     id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    name: { type: String },
   },
   status: [
     {

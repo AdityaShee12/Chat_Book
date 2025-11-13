@@ -166,46 +166,83 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const statusUpload = asyncHandler(async (req, res) => {
-  const uploader = req.body.userId;
-
-  const statusLocalPath = req.files?.status[0]?.path;
+  const { userId, userName } = req.body;
+  console.log("Username",userName);
+  
+  const statusLocalPath = req.files?.status?.[0]?.path;
 
   const status = await uploadOnCloudinary(statusLocalPath);
+  if (!status?.url) {
+    throw new ApiError(400, "Failed to upload status file");
+  }
 
-  const newStatus = await Status.create({
-    uploader: { id: uploader },
-    status: [{ file: status?.url || "" }],
-  });
+  let existingStatus = await Status.findOne({ "uploader.id": userId });
 
-  const update = await Status.findById(newStatus._id);
-  if (!update)
-    throw new ApiError(500, "Something went wrong while user upload status");
+  if (existingStatus) {
+    existingStatus.status.push({
+      file: status.url,
+      timestamp: new Date(),
+    });
+    await existingStatus.save();
+  } else {
+    existingStatus = await Status.create({
+      uploader: { id: userId, name: userName },
+      status: [{ file: status.url, timestamp: new Date() }],
+    });
+  }
+
+  const userData = existingStatus.status.map((s) => s.file);
 
   return res
-    .status(201)
-    .json(new ApiResponse(200, update, "User upload status successfully"));
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        userData,
+        existingStatus
+          ? "All status files fetched successfully"
+          : "Status uploaded successfully"
+      )
+    );
 });
 
 const statusShow = asyncHandler(async (req, res) => {
   const { userId } = req.body;
-
-  // main user
   const user = await User.findById(userId).select("-password -refreshToken");
   if (!user) {
     return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
-
-  // protita friend er data fetch
-  const friendsData = await Promise.all(
-    user.friends.map(async (friend) => {
-      const friendStatus = await Status.findOne({ "uploader.id": friend.id });
-      return friendStatus;
-    })
+  const userStatuses = await Status.find({ "uploader.id": userId }).lean();
+  const usersData = userStatuses.flatMap((item) =>
+    item.status.map((s) => s.file)
   );
-
+  const friendsData = user?.otherUsers?.length
+    ? await Promise.all(
+        user.otherUsers.map(async (friend) => {
+          const friendStatuses = await Status.find({
+            "uploader.id": friend.id,
+          }).lean();
+          if (!friendStatuses.length) return null;
+          const name = friendStatuses[0].uploader.name;
+          const files = friendStatuses.flatMap((item) =>
+            item.status.map((s) => s.file)
+          );
+          return {
+            friendName: name,
+            statuses: files,
+          };
+        })
+      )
+    : [];
   return res
     .status(200)
-    .json(new ApiResponse(200, friendsData, "Every friend's status"));
+    .json(
+      new ApiResponse(
+        200,
+        { usersData, friendsData },
+        "User and friends' statuses"
+      )
+    );
 });
 
 const setPassword = asyncHandler(async (req, res) => {
